@@ -37,7 +37,7 @@ type Birthdays = HashMap Text Day
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "bday" $ do
-    bdayFile <- liftIO $ readFile "bdays.json" 
+    bdayFile <- liftIO $ readFile "data/bday.json" 
     bdays <- case eitherDecode' bdayFile of
                 Left err -> do 
                     errorM $ "could not read bdays.json: " ++ pack err
@@ -50,7 +50,7 @@ script = defineScript "bday" $ do
             let 
                 (year, month, day) = toGregorian $ utctDay today
                 (bDayYear, bDayMonth, bDayDay) = toGregorian bday
-            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ toStrict $ format ":tada: Alles Gute zum Geburtstag, {}! :tada:" [toUpper name]
+            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ toStrict $ format ":tada: Alles Gute zum Geburtstag, {}! :tada:" [toTitle name]
     
     void $ liftIO $ execSchedule $ do
         addJob congratulate "00 00 9 * * *"    
@@ -69,9 +69,9 @@ script = defineScript "bday" $ do
         
             date = minimumEx $ map snd $ mapToList vallist
 
-            birthdayBoysAndGirls = map (toUpper . fst) $ filter ((== date)  . snd) $ mapToList vallist
+            birthdayBoysAndGirls = map (toTitle . fst) $ filter ((== date)  . snd) $ mapToList vallist
 
-            daysDiff = diffDays today date 
+            daysDiff = diffDays date today 
             last_ = lastEx birthdayBoysAndGirls
 
             diffStr

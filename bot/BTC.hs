@@ -22,7 +22,7 @@ import Data.Aeson
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "btc" $
-    respond (r [CaseInsensitive] "btc/") $ do
+    respond (r [CaseInsensitive] "btc") $ do
         r <- liftIO $ get "https://api.coinbase.com/v2/exchange-rates?currency=BTC"
         case eitherDecode' (r^.responseBody) :: Either String Value of
             Left err -> errorM $ "Unreadable json" ++ pack err

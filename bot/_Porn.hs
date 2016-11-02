@@ -625,5 +625,5 @@ targeted_porn_responses = [
         "Spermboat {target}",
         "{target} Arschkopf",
         "{target} und die starken Schwängel",
-        "Dieser Graf {target} kommt echt oft",
+        "Dieser Graf {target} kommt echt oft"
         ]
