@@ -16,6 +16,12 @@
 module Random where
 
 
+import Marvin.Prelude
+import Network.Wreq
+import Data.Text (strip)
+import Control.Lens
+
+
 script :: IsAdapter a => ScriptInit a
 script = defineScript "random" $ do
     -- robot.hear /.*/, (msg) ->
@@ -35,7 +41,7 @@ script = defineScript "random" $ do
         let adj = toLower $ match `indexEx` 1
         reply $ toStrict $ format "Deine Mudda ist {}!" [adj]
 
-    hear (r [CaseInsensitive] "matthias scheißt auf (.*)" $ do
+    hear (r [CaseInsensitive] "matthias scheißt auf (.*)") $ do
         match <- getMatch
         let term = match `indexEx` 1
         reply $ toStrict $ format "Deine Mudda scheißt auf {}!" [term]
@@ -45,21 +51,17 @@ script = defineScript "random" $ do
         rand <- randomValFromRange (1, highestQuote :: Int)
         send $ toStrict $ format "http://bash.fsrleaks.de/?{}" [rand]
 
-  robot.respond /random (\d*) (\d*)/i, (msg) ->
-    min = msg.match[1]
-    max = msg.match[2]
-    robot.http("https://www.random.org/integers/?num=1&min=#{min}&max=#{max}&format=plain&col=1&base=10")
-      .get() (err, res, body) ->
-        msg.send(body.trim())
+    respond (r [CaseInsensitive] "random (\\d*) (\\d*)") $ do
+        (_:min:max:_) <- getMatch
 
-randomRange = (min, max) ->
-  Math.floor(Math.random() * (max - min) + min)
+        r <- liftIO $ get $ unpack $ "https://www.random.org/integers/?num=1&min=" ++ min ++ "&max=" ++ max ++ "&format=plain&col=1&base=10"
+        send $ strip $ decodeUtf8 $ toStrict $ r^.responseBody
 
 donny = "slackbot"
-walter_quotes = [
-  "Shut the fuck up, #{donny}.",
-  "Forget it, #{donny}, you're out of your element!",
-  "#{donny}, you're out of your element!",
-  "#{donny}, shut the f—",
-  "That's ex-- Shut the fuck up, #{donny}!"
-]
+walter_quotes = 
+    [ "Shut the fuck up, " ++ donny ++ "."
+    , "Forget it, " ++ donny ++ ", you're out of your element!"
+    , donny ++ ", you're out of your element!"
+    , donny ++ ", shut the f—"
+    , "That's ex-- Shut the fuck up, " ++ donny ++ "!"
+    ]

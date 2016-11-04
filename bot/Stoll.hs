@@ -12,12 +12,13 @@
 
 -- Author:
 --   kiliankoe
-
+{-# LANGUAGE NamedFieldPuns #-}
 module Stoll where
 
 
 import Marvin.Prelude
-import Data.Text (toTitle)
+import Data.Text (toTitle, replace)
+import Data.Maybe (fromJust)
 
 
 script :: IsAdapter a => ScriptInit a
@@ -25,7 +26,7 @@ script = defineScript "stoll" $
     respond (r [CaseInsensitive] "stoll me") $ do
         quote <- randomFrom stoll_quotes
         msg <- getMessage
-        User{username} <- getUserInfo (sender msg)
+        UserInfo{username} <- fromJust <$> getUserInfo (sender msg)
         let quote = replace "{target}" (toTitle username) quote
 
         send quote
@@ -534,4 +535,4 @@ stoll_quotes =
     , "{target} los, schreib das auf!"
     , "Ja {target}! Da ist was im Busch!"
     , "{target}! Das betrifft auch dich!"
-    , ]
+    ]
