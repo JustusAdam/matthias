@@ -15,8 +15,8 @@
 {-# LANGUAGE TemplateHaskell #-}
 module Version where
 
-import Marvin.Prelude
-import Development.GitRev
+import           Development.GitRev
+import           Marvin.Prelude
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "version" $

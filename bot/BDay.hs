@@ -23,11 +23,11 @@
 
 module BDay where
 
-import Marvin.Prelude
-import Marvin.Util.JSON
-import Data.Time
-import System.Cron
-import Data.Text (toTitle)
+import           Data.Text        (toTitle)
+import           Data.Time
+import           Marvin.Prelude
+import           Marvin.Util.JSON
+import           System.Cron
 
 dontShow = 1900
 

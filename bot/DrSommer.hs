@@ -14,8 +14,8 @@
 --   kiliankoe
 module DrSommer where
 
-import Marvin.Prelude
-import Data.Text (replace)
+import           Data.Text      (replace)
+import           Marvin.Prelude
 
 
 script :: IsAdapter a => ScriptInit a

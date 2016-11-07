@@ -1,8 +1,8 @@
 module MyScript where
 
 
-import Marvin.Prelude
-import Marvin.Adapter.Slack
+import           Marvin.Adapter.Slack
+import           Marvin.Prelude
 
 
 script :: ScriptInit SlackRTMAdapter

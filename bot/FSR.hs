@@ -20,11 +20,11 @@
 module FSR where
 
 
-import Marvin.Prelude
-import Data.Time
-import Network.Wreq
-import Control.Lens hiding (index)
-import Data.Text (strip)
+import           Control.Lens   hiding (index)
+import           Data.Text      (strip)
+import           Data.Time
+import           Marvin.Prelude
+import           Network.Wreq
 
 
 getDay (_, _, day) = day
@@ -37,7 +37,7 @@ script = defineScript "fsr" $ do
         case match `index` 1 of
             Just "" -> send "https://www.ifsr.de/protokolle/current.pdf"
             Nothing -> send "https://www.ifsr.de/protokolle/current.pdf"
-            Just date -> 
+            Just date ->
                 case toGregorian <$> parseTimeM False defaultTimeLocale (iso8601DateFormat Nothing) (unpack date) of
                     Nothing -> errorM $ "Unparseable date " ++ date
                     Just dateobj | getDay dateobj /= 1 -> send "Das war leider kein Sitzungsdatum."
@@ -48,8 +48,8 @@ script = defineScript "fsr" $ do
         esedate <- getConfigVal "esedate"
         case esedate >>= parseTimeM False defaultTimeLocale (iso8601DateFormat Nothing) of
             Nothing -> errorM "date not present or wrong format"
-            Just esedate -> do 
-                let datediff = diffDays currentdate esedate  
+            Just esedate -> do
+                let datediff = diffDays currentdate esedate
 
                 send $ toStrict $ format "Nur noch {} Tage bis zur ESE 2016. Vermutlich :stuck_out_tongue_winking_eye:" [datediff]
 
@@ -58,7 +58,7 @@ script = defineScript "fsr" $ do
         case strip $ toStrict $ decodeUtf8 $ r^.responseBody of
             "1" -> send "Scheint so."
             "0" -> send "Glaub nicht."
-            _ -> send "Keine Ahnung, Sebastian hat schon wieder unerwartet was geändert!"  
+            _ -> send "Keine Ahnung, Sebastian hat schon wieder unerwartet was geändert!"
 
     respond (r [CaseInsensitive] "(buero|büro)(status)?") $
         send "https://www.ifsr.de/buerostatus/image.php?h=6"

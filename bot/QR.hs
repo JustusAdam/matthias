@@ -15,14 +15,14 @@
 
 module QR where
 
-import Marvin.Prelude
-import Network.Wreq
-import Data.Aeson.Lens
-import Data.Aeson
-import Control.Lens
+import           Control.Lens
+import           Data.Aeson
+import           Data.Aeson.Lens
+import           Marvin.Prelude
+import           Network.Wreq
 
 script :: IsAdapter a => ScriptInit a
-script = defineScript "qr" $ 
+script = defineScript "qr" $
     respond (r [CaseInsensitive] "qr (.*)") $ do
         match <- getMatch
         let url = encodeURIComponent $ match `indexEx` 1 :: Text

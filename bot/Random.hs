@@ -16,10 +16,10 @@
 module Random where
 
 
-import Marvin.Prelude
-import Network.Wreq
-import Data.Text (strip)
-import Control.Lens
+import           Control.Lens
+import           Data.Text      (strip)
+import           Marvin.Prelude
+import           Network.Wreq
 
 
 script :: IsAdapter a => ScriptInit a
@@ -58,7 +58,7 @@ script = defineScript "random" $ do
         send $ strip $ decodeUtf8 $ toStrict $ r^.responseBody
 
 donny = "slackbot"
-walter_quotes = 
+walter_quotes =
     [ "Shut the fuck up, " ++ donny ++ "."
     , "Forget it, " ++ donny ++ ", you're out of your element!"
     , donny ++ ", you're out of your element!"

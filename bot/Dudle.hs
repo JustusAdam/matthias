@@ -20,22 +20,22 @@
 -- cronjob = require('cron').CronJob
 -- cheerio = require 'cheerio'
 -- feed = require 'feed-read'
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE NamedFieldPuns   #-}
+{-# LANGUAGE TypeFamilies     #-}
 module Dudle where
 
 
-import Marvin.Prelude
-import Network.Wreq hiding (delete)
-import Control.Lens hiding (index, element)
-import Data.Time
-import System.Cron
-import Text.XML hiding (writeFile, readFile)
-import Text.XML.Cursor as Cursor
-import Text.Feed.Query
-import Text.Feed.Import
-import Data.Maybe (fromJust)
+import           Control.Lens     hiding (element, index)
+import           Data.Maybe       (fromJust)
+import           Data.Time
+import           Marvin.Prelude
+import           Network.Wreq     hiding (delete)
+import           System.Cron
+import           Text.Feed.Import
+import           Text.Feed.Query
+import           Text.XML         hiding (readFile, writeFile)
+import           Text.XML.Cursor  as Cursor
 
 
 defaultDudleDB = "./data/dudle.json"
@@ -45,8 +45,8 @@ dudleDB = fromMaybe defaultDudleDB <$> getConfigVal "db"
 
 
 data Dudle = Dudle
-    { dShortname :: Text
-    , dUrl :: Text
+    { dShortname   :: Text
+    , dUrl         :: Text
     , dLastChecked :: UTCTime
     }
 
@@ -128,7 +128,7 @@ readDudlesFile = do
         else do
             file <- readFile dudle_loc
             case eitherDecode file of
-                Right f -> return f
+                Right f  -> return f
                 Left err -> errorM (pack err) >> return mempty
 
 withDudlesFile action = readDudlesFile >>= action >>= maybe (return ()) writeDudlesFile

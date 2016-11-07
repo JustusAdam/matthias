@@ -14,7 +14,7 @@
 --   kiliankoe
 module SudoGer where
 
-import Marvin.Prelude
+import           Marvin.Prelude
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "sudo_ger" $

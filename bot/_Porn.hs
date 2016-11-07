@@ -17,8 +17,8 @@
 module Porn where
 
 
-import Marvin.Prelude
-import Data.Text
+import           Data.Text
+import           Marvin.Prelude
 
 
 script :: IsAdapter a => ScriptInit a

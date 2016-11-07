@@ -16,9 +16,9 @@
 module Stoll where
 
 
-import Marvin.Prelude
-import Data.Text (toTitle, replace)
-import Data.Maybe (fromJust)
+import           Data.Maybe     (fromJust)
+import           Data.Text      (replace, toTitle)
+import           Marvin.Prelude
 
 
 script :: IsAdapter a => ScriptInit a
@@ -33,10 +33,10 @@ script = defineScript "stoll" $
 
 
 stoll_quotes :: [Text]
-stoll_quotes = 
+stoll_quotes =
     [ "Ist ne stehende Welle, junge Dame."
     , "Licht ist keine Grenzgeschwindigkeit, vorsicht. Skalarwellen und stehende Welle hat ein vielfaches mehr."
-    , "Auf die Maßeinheiten der Kernphysik hab ich bewusst verzichtet, denn außer mir würde das kaum jemand begreifen."    
+    , "Auf die Maßeinheiten der Kernphysik hab ich bewusst verzichtet, denn außer mir würde das kaum jemand begreifen."
     , "Das ist ein ganz einfacher Algorithmus."
     , "Primzahlen bis 1024 werden in der Computertechnik benutzt."
     , "Darwin, Jude… klar. Da wurde die Biologie versaut – Einstein, Jude… die Physik wurde versaut, so kann ich das ganze Gebäude durchgehen."

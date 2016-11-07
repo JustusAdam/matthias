@@ -15,10 +15,10 @@
 module Elbe where
 
 
-import Network.Wreq
-import Control.Lens
-import Data.Text (justifyRight)
-import Data.Time
+import           Control.Lens
+import           Data.Text    (justifyRight)
+import           Data.Time
+import           Network.Wreq
 
 
 script = defineScript "elbe" $ do
@@ -27,7 +27,7 @@ script = defineScript "elbe" $ do
 checkPegel = do
     r <- liftIO $ getWith (defaults & header "Accept" .~ ["application/json"]) "http://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/DRESDEN/W/measurements.json?start=P0DT0H15M"
 
-    
+
     case eitherDecode' (r ^. responseBody) of
         Left err -> errorM (pack err)
         Right value -> do

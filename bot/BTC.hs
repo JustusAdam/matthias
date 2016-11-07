@@ -14,11 +14,11 @@
 --   kiliankoe
 module BTC where
 
-import Marvin.Prelude
-import Network.Wreq
-import Control.Lens
-import Data.Aeson.Lens
-import Data.Aeson
+import           Control.Lens
+import           Data.Aeson
+import           Data.Aeson.Lens
+import           Marvin.Prelude
+import           Network.Wreq
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "btc" $

@@ -18,7 +18,7 @@
 module SimpleResponses where
 
 
-import Marvin.Prelude
+import           Marvin.Prelude
 
 
 simpleresponses =

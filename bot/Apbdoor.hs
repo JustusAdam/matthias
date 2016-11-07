@@ -21,9 +21,9 @@
 module Apbdoor (script) where
 
 
-import Marvin.Prelude
-import Network.Wreq
-import Control.Lens
+import           Control.Lens
+import           Marvin.Prelude
+import           Network.Wreq
 
 
 script :: IsAdapter a => ScriptInit a
@@ -47,10 +47,10 @@ script = defineScript "apbdoor" $ do
 checkDoor :: IsAdapter a => BotReacting a MessageReactionData ()
 checkDoor = do
   r <- liftIO $ get "http://tuer.fsrleaks.de"
-  
+
   let body = r^.responseBody
   -- TODO Add random
-  if 
+  if
     | "Ja" `isInfixOf` body -> randomFrom yesMsgs >>= send
     | "Nein" `isInfixOf` body -> randomFrom noMsgs >>= send
     | otherwise -> randomFrom maybeMsgs >>= send
@@ -58,7 +58,7 @@ checkDoor = do
 
 setDoor state = liftIO $ get (unpack $ format "http://door.fsrleaks.de/set.php?{}" [state :: Text])
 
-yesMsgs = 
+yesMsgs =
   [ "Jop, Tür ist im Eimer."
   , "Tür ist 'putt."
   , "Rate mal..."
@@ -68,7 +68,7 @@ yesMsgs =
   , "Techniker ist selbstverständlich bereits informiert."
   ]
 
-noMsgs = 
+noMsgs =
   [ "Die Tür ist... ganz?!"
   , "Alles im grünen Bereich."
   , "Sie ist ganz! Also... Zumindest gerade eben. Vermutlich schon nicht mehr."
@@ -76,7 +76,7 @@ noMsgs =
   , "Hab' eben nachgesehen und... Ausnahmezustand!"
   ]
 
-maybeMsgs = 
+maybeMsgs =
   [ "Ich hab keine Ahnung ¯\\_(ツ)_/¯"
   , "Sorry, musst du dieses Mal selber nachschauen."
   , "Quizás, señor/a."
