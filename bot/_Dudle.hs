@@ -25,12 +25,29 @@ module Dudle where
 
 
 import Marvin.Prelude
+import Network.Wreq
+import Control.Lens
+import Data.Time
+import System.Cron
+import Text.XML
+import Text.XML.Cursor
 
 
-dudle_db = "./data/dudle.json"
+default_dudle_db = "./data/dudle.json"
 
 
-csript = defineScript "dudle" $ do
+dudle_db = fromMaybe default_dudle_db <$> getConfigVal "db"
+
+
+data Dudle = Dudle
+    { dShortname :: Text
+    , dUrl :: Text
+    , dLastChecked :: UTCTime
+    }
+
+
+script :: IsAdapter a => ScriptInit a
+script = defineScript "dudle" $ do
 
     check_all_dudles <- extractAction $ do
         dudles <- read_dudles_file
@@ -40,183 +57,152 @@ csript = defineScript "dudle" $ do
                     publish_events robot, dudle, events
         write_dudles_file dudles
 
-    new cronjob('00 */10 * * * *', ->
-        check_all_dudles(robot)
-    , null, true, "Europe/Berlin")
+    void $ liftIO $ execSchedule $ do
+        addJob check_all_dudles "00 00 9 * * *"
 
-    robot.respond /subscribe (.*)/i, (msg) ->
-        match = msg.match[1]
-        # shortname_from_link returns same content early if it's not a link
-        shortname = shortname_from_link match
-        dudle_link = make_valid_dudle_link match
-        # TODO: Theoretically one could validate the dudle itself here as well.
-        # Otherwise it will get removed after <10 minutes automatically
-        # But the user won't be any smarter...
-        if is_already_subscribed shortname
-            msg.send 'Das tracke ich bereits.'
-        else
-            save_dudle_to_file shortname, dudle_link
-            msg.send "Ok, ich poste Updates zu #{shortname} in #dudle."
+    respond (r [CaseInsensitive] "subscribe (.*)") $ do
+        (_:match:_) <- getMatch
+        -- shortname_from_link returns same content early if it's not a link
+        let shortname = shortname_from_link match
+            dudle_link = make_valid_dudle_link match
+        -- TODO: Theoretically one could validate the dudle itself here as well.
+        -- Otherwise it will get removed after <10 minutes automatically
+        -- But the user won't be any smarter...
+        isSubbed <- is_already_subscribed shortname
+        if isSubbed
+            then send "Das tracke ich bereits."
+            else do
+                save_dudle_to_file shortname dudle_link
+                send $ "Ok, ich poste Updates zu " ++ shortname ++ " in #dudle."
 
-    robot.respond /unsubscribe (.*)/i, (msg) ->
-        shortname = msg.match[1]
-        found = remove_dudle_from_file shortname
-        if found
-            msg.send "Ok, tracke #{shortname} nicht mehr."
-        else
-            msg.send "Tracke aktuell nichts mit diesem Namen."
+    respond (r [CaseInsensitive] "unsubscribe (.*)") $ do
+        (_:shortname:_) <- getMatch
+        found <- remove_dudle_from_file shortname
+        send $ if found
+                  then "Ok, tracke " ++ shortname ++ " nicht mehr."
+                  else "Tracke aktuell nichts mit diesem Namen."
 
-    robot.respond /dudlelist/i, (msg) ->
-        msg.send 'Aktuell tracke ich folgende Dudles:'
-        dudles = read_dudles_file()
-        dudles.forEach (dudle) ->
-            msg.send "#{dudle.shortname}: #{dudle.url}"
+    respond (r [CaseInsensitive] "dudlelist") $ do
+        send "Aktuell tracke ich folgende Dudles:"
+        dudles <- read_dudles_file
+        for_ dudles $ \Dudle{dShortname, dUrl} ->
+            send $ dShortname ++ ": " ++ dUrl
 
-    robot.respond /dudle (.*)/i, (msg) ->
-        shortname = msg.match[1]
-        dudle_link = "https://dudle.inf.tu-dresden.de/#{shortname}/"
-        robot.http(dudle_link)
-            .get() (err, res, body) ->
-                if res.statusCode != 200
-                    msg.send 'Sieht nicht so aus, als ob das Dudle (noch) existiert.'
-                    return
+    respond (r [CaseInsensitive] "dudle (.*)") $ do
+        (_:shortname:_) <- getMatch
+        let dudle_link = "https://dudle.inf.tu-dresden.de/" ++ shortname ++ "/"
+        r <- get dudle_link
+        if r^.responseStatus.statusCode /= 200
+            then send "Sieht nicht so aus, als ob das Dudle (noch) existiert."
+            else
+                case parse_totals $ r^.responseBody of
+                    Left err -> errorM err >> send (pack err)
+                    Right v | size v == 0 -> send "Das Dudle scheint leer zu sein..."
+                    Right v -> for_ v $ send . toStrict . format "Option {} mit {} Stimmen"
 
-                totals = parse_totals body
-                if totals.size == 0
-                    msg.send 'Das Dudle scheint leer zu sein...'
-                    return
+shortname_from_link link
+    | not $ is_dudle_url link = link
+    | has_trailing_slash link = lastSegment $ initEx link
+    | otherwise = lastSegment link
+  where
+    lastSegment = last $ split "/"
 
-                msg.send 'Hab folgende Resultate gefunden:'
-                totals.forEach (el, count) ->
-                    msg.send "Option #{el} mit #{count} Stimmen"
+make_valid_dudle_link str
+    | is_dudle_url str =
+        if has_trailing_slash str then str else str ++ "/"
+    | otherwise = "https://dudle.inf.tu-dresden.de/" ++ str ++ "/"
 
-shortname_from_link = (link) ->
-    if !is_dudle_url link
-        return link
-    if has_trailing_slash link
-        link = link.slice 0, -1 # the easy way out^^
-    link_elements = link.split('/')
-    link_elements.last()
+is_dudle_url = isJust . match pattern
+  where pattern = r [] "dudle\\.inf\\." :: Regex
 
-make_valid_dudle_link = (str) ->
-    if is_dudle_url str
-        if !has_trailing_slash str
-            str += '/'
-    else
-        str = "https://dudle.inf.tu-dresden.de/#{str}/"
-    str
+has_trailing_slash = ("/" `isSuffixOf`)
 
-is_dudle_url = (str) ->
-    pattern = /dudle\.inf\./
-    pattern.test str
+is_already_subscribed = do
+    file <- read_dudles_file
+    return $ shortname `member` file
 
-has_trailing_slash = (str) ->
-    pattern = /\/$/
-    pattern.test str
+read_dudles_file = do
+    dudle_loc <-dudle_db
+    exists <- liftIO $ doesFileExist dudle_loc
+    if not exists
+        then errorM ("Couldnt find dudle file \"" ++ dudle_loc ++ "\"") >> return mempty
+        else do
+            file <- readFile dudle_loc
+            case eitherDecode file of
+                Right f -> return f
+                Left err -> errorM err >> return mempty
 
-is_already_subscribed = (shortname) ->
-    read_dudles_file().has shortname
+write_dudles_file dudles = do
+    dudleLoc <- dudle_db
+    writeFile dudleLoc $ encode dudles
 
-read_dudles_file = ->
-    try
-        dudles = new Map(JSON.parse(fs.readFileSync(dudle_db)).map((dudle) -> [dudle.shortname, dudle]))
-    catch err
-        dudles = new Map()
-        console.log "Couldn't find #{dudle_db}"
-    dudles
+save_dudle_to_file shortname url = do
+    dudles <- read_dudles_file
+    date <- liftIO $ getCurrentTime
+    let new_dudle = Dudle
+            { dShortname = shortname
+            , dUrl = url
+            , dLastChecked = date
+            }
+    write_dudles_file $ insert shortname new_dudle dudles
 
-write_dudles_file = (dudle_map) ->
-    values = []
-    for val in dudle_map.values()
-        values.push(val)
-    try
-        fs.writeFile(dudle_db, JSON.stringify(values, null, 2), -> null)
-    catch err
-        console.log "Couldn't write to #{dudle_db}: #{err}"
+remove_dudle_from_file shortname = do
+    dudles <- read_dudles_file
+    write_dudles_file $ delete shortname dudles
+    return $ shortname `member` dudles
 
+update_dudle_date shortname date = do
+    dudles <- read_dudles_file
+    write_dudles_file $ adjust (\d@Dudle{dLastChecked} -> d {dLastChecked = date}) dudles
 
-
-save_dudle_to_file = (shortname, url) ->
-    dudles = read_dudles_file()
-    new_dudle =
-        shortname: shortname
-        url: url
-        last_checked: new Date().toISOString()
-    dudles.set shortname, new_dudle
-    write_dudles_file dudles
-
-remove_dudle_from_file = (shortname) ->
-    dudles = read_dudles_file()
-
-    if dudles.has shortname
-        dudles.delete shortname
-        write_dudles_file dudles
-        true
-    else
-        false
-
-update_dudle_date = (shortname, date) ->
-    dudles = read_dudles_file()
-    dudles.get(shortname).last_checked = date.toISOString()
-    write_dudles_file dudles
-
-check_all_dudles = (robot) ->
-    dudles = read_dudles_file()
-    dudles.forEach (dudle) ->
-        check_dudle_feed dudles, dudle, (events) ->
-            if events.length > 0
-                publish_events robot, dudle, events
-    write_dudles_file dudles
-
-check_dudle_feed = (map, dudle, event_callback) ->
-    atom_url = dudle.url + "atom.cgi"
-    feed atom_url, (err, articles) ->
-        if err != null
-            console.log "Feed for dudle #{dudle.shortname} not found. Removing it from list."
-            map.delete dudle.shortname
-        else
-            last_checked = new Date(dudle.last_checked)
-            last_updated = articles.first().published
-            now = new Date()
-            now.addHours 1
-            dudle.last_checked = now
-            event_callback(articles
-                            .filter((article) -> last_checked < article.published)
-                            .map((article) -> article.title))
+check_all_dudles robot = do
+    dudles <- read_dudles_file
+    mapM (check_dudle_feed dudles publish) dudles >>= write_dudles_file
 
 
-publish_events = (robot, dudle, events) ->
-    robot.messageRoom '#dudle', "Neues zum Dudle #{dudle.shortname}:"
-    events = events.reverse() # let's do this in chronological order
-    for e in events
-        robot.messageRoom '#dudle', e
-    robot.messageRoom '#dudle', "Mehr Infos direkt hier: #{dudle.url}"
+check_dudle_feed map event_callback dudle = do
+    let atom_url = url dudle ++ "atom.cgi"
+    articles <- feed atom_url
 
-parse_totals = (body) ->
-    $ = cheerio.load body
+    -- if err != null
+    --     console.log "Feed for dudle #{dudle.shortname} not found. Removing it from list."
+    --     map.delete dudle.shortname
+    last_checked = new Date(dudle.last_checked)
+    last_updated = articles.first().published
+    now = new Date()
+    now.addHours 1
+    dudle.last_checked = now
+    event_callback(articles
+                    .filter((article) -> last_checked < article.published)
+                    .map((article) -> article.title))
 
-    header_rows = $('#participanttable > thead > tr:nth-child(2)').children()
-    header_items = elements_of_column header_rows
 
-    summary_rows = $('#summary').children()
+-- TODO Handle empty events
+publish_events dudle events
+    | null events = return ()
+    | otherwise = do
+        messageRoom "#dudle" $ "Neues zum Dudle " ++ dShortname dudle ++ ":"
+        events = reverse events # let's do this in chronological order
+        for_ events $ \e ->
+            messageRoom "#dudle" e
+        messageRoom "#dudle" $ "Mehr Infos direkt hier: " ++ url dudle
+
+parse_totals = do
+    hi <- header_items
+    return $ mapFromList $ zip hi summary_items
+  where
+    -- TODO Handle errors
+    doc = parseLBS_ def body
+    cursor = fromDocument doc
+    header_rows = (cursor $// attributeIs "class" "participanttable" &// element "thead" &// element "tr" >=> child) `index` 2 >>= ($| child)
+--    header_rows = $('#participanttable > thead > tr:nth-child(2)').children()
+    header_items = elements_of_column <$> header_rows
+
+    summary_rows = cursor $// attributeIs "class" "summary" &| child
     summary_items = elements_of_column summary_rows
 
-    totals = new Map()
-    for i in [0..header_items.length - 1]
-        totals.set(header_items[i], summary_items[i])
-    totals
 
-elements_of_column = (row) ->
+
+elements_of_column row = do
+    map (($| content) . head) $ tail row
     Array.from(row.slice(1, row.length - 1)).map((column) -> column.children[0].data)
-
-
-# stuffjsdoesnthave.tumblr.com
-if !Array.prototype.last
-    Array.prototype.last = ->
-        return this[this.length - 1]
-    Array.prototype.first = ->
-        return this[0]
-
-Date.prototype.addHours = (h) ->
-   this.setTime(this.getTime() + (h*60*60*1000))
-   return this
