@@ -32,14 +32,18 @@ import Data.Text (toTitle)
 dontShow = 1900
 
 
+defaultBdayDatabase = "data/bday.json"
+
+
 type Birthdays = HashMap Text Day
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "bday" $ do
-    bdayFile <- liftIO $ readFile "data/bday.json" 
+    bdayDBFile <- fromMaybe defaultBdayDatabase <$> getConfigVal "db"
+    bdayFile <- liftIO $ readFile bdayDBFile
     bdays <- case eitherDecode' bdayFile of
-                Left err -> do 
+                Left err -> do
                     errorM $ "could not read bdays.json: " ++ pack err
                     return mempty
                 Right b -> return b
@@ -47,31 +51,31 @@ script = defineScript "bday" $ do
     congratulate <- extractAction $
         for_ (mapToList (bdays :: Birthdays)) $ \(name, bday) -> do
             today <- liftIO getCurrentTime
-            let 
+            let
                 (year, month, day) = toGregorian $ utctDay today
                 (bDayYear, bDayMonth, bDayDay) = toGregorian bday
             when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ toStrict $ format ":tada: Alles Gute zum Geburtstag, {}! :tada:" [toTitle name]
-    
+
     void $ liftIO $ execSchedule $ do
-        addJob congratulate "00 00 9 * * *"    
+        addJob congratulate "00 00 9 * * *"
 
     respond (r [CaseInsensitive] "(birthday|bday|geburtstag)\\??$") $ do
         today <- utctDay <$> liftIO getCurrentTime
-        let 
-            (yearToday, _, _) = toGregorian today 
+        let
+            (yearToday, _, _) = toGregorian today
             vallist = flip mapWithKey bdays $ \ name value -> do
-                let 
+                let
                     (_, bdayMonth, bdayDay) = toGregorian value
                     date = fromGregorian yearToday bdayMonth bdayDay
                 if date < today
                     then addGregorianYearsRollOver 1 date
                     else date
-        
+
             date = minimumEx $ map snd $ mapToList vallist
 
             birthdayBoysAndGirls = map (toTitle . fst) $ filter ((== date)  . snd) $ mapToList vallist
 
-            daysDiff = diffDays date today 
+            daysDiff = diffDays date today
             last_ = lastEx birthdayBoysAndGirls
 
             diffStr
@@ -86,7 +90,7 @@ script = defineScript "bday" $ do
     respond (r [CaseInsensitive] "(birthday|bday|geburtstag) (.+)") $ do
         (_:name':_) <- getMatch
         let name = toLower name
-        
+
         case name of
             -- Looks like we're going for the list below...
             "list" -> return ()
@@ -106,7 +110,7 @@ formatBirthdayInfo name birthday
     | birthdayYear == dontShow = return $ toStrict $ format "{} hat am {}.{}. Geburtstag." (toTitle name, birthdayDay, birthdayMonth)
     | otherwise = do
         today <- utctDay <$> liftIO getCurrentTime
-        let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday 
-        return $ toStrict $ format "{} wurde am {}.{}. geboren. Das war vor {} Jahren! :O" (toTitle name, birthdayDay, birthdayMonth, age)          
+        let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday
+        return $ toStrict $ format "{} wurde am {}.{}. geboren. Das war vor {} Jahren! :O" (toTitle name, birthdayDay, birthdayMonth, age)
   where
     (birthdayYear, birthdayMonth, birthdayDay) = toGregorian birthday
