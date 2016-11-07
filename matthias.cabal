@@ -22,6 +22,7 @@ executable matthias-bot
                      , lens-aeson
                      , gitrev
                      , xml-conduit
+                     , feed
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings
                      , MultiParamTypeClasses
