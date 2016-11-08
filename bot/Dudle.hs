@@ -36,11 +36,14 @@ import           Text.Feed.Import
 import           Text.Feed.Query
 import           Text.XML         hiding (readFile, writeFile)
 import           Text.XML.Cursor  as Cursor
+import System.Directory
+import qualified Data.ByteString.Lazy as BL
 
 
 defaultDudleDB = "./data/dudle.json"
 
 
+dudleDB :: BotReacting a b FilePath
 dudleDB = fromMaybe defaultDudleDB <$> getConfigVal "db"
 
 
@@ -51,10 +54,13 @@ data Dudle = Dudle
     }
 
 
+type Dudles = HashMap Text Dudle
+
+
 script :: IsAdapter a => ScriptInit a
 script = defineScript "dudle" $ do
 
-    checkAllDudles_IO <- checkAllDudles
+    checkAllDudles_IO <- extractAction checkAllDudles
 
     void $ liftIO $ execSchedule $
         addJob checkAllDudles_IO "00 00 9 * * *"
@@ -89,22 +95,22 @@ script = defineScript "dudle" $ do
 
     respond (r [CaseInsensitive] "dudle (.*)") $ do
         (_:shortname:_) <- getMatch
-        let dudle_link = "https://dudle.inf.tu-dresden.de/" ++ shortname ++ "/"
-        r <- get dudle_link
+        let dudle_link = "https://dudle.inf.tu-dresden.de/" ++ unpack shortname ++ "/"
+        r <- liftIO $ get dudle_link
         if r^.responseStatus.statusCode /= 200
             then send "Sieht nicht so aus, als ob das Dudle (noch) existiert."
             else
-                case parseTotals $ r^.responseBody of
-                    Left err -> errorM err >> send (pack err)
-                    Right v | size v == 0 -> send "Das Dudle scheint leer zu sein..."
-                    Right v -> for_ v $ send . toStrict . format "Option {} mit {} Stimmen"
+                case parseTotal $ r^.responseBody of
+                    Nothing -> errorM "Dudle unparseable" >> send "Dudle unparseable"
+                    Just v | null v -> send "Das Dudle scheint leer zu sein..."
+                    Just v -> for_ v $ send . toStrict . format "Option {} mit {} Stimmen"
 
 shortnameFromLink link
     | not $ isDudleUrl link = link
     | hasTrailingSlash link = lastSegment $ initEx link
     | otherwise = lastSegment link
   where
-    lastSegment = last $ split "/"
+    lastSegment = lastEx $ split "/"
 
 makeValidDudleLink str
     | isDudleUrl str =
@@ -116,12 +122,12 @@ isDudleUrl = isJust . match pat
 
 hasTrailingSlash = ("/" `isSuffixOf`)
 
-isAlreadySubscribed = do
+isAlreadySubscribed shortname = do
     file <- readDudlesFile
-    return $ shortname `member` file
+    return $ shortname `member` (file :: Dudles)
 
 readDudlesFile = do
-    dudle_loc <-dudleDB
+    dudle_loc <- dudleDB
     exists <- liftIO $ doesFileExist dudle_loc
     if not exists
         then errorM ("Couldnt find dudle file \"" ++ pack dudle_loc ++ "\"") >> return mempty
@@ -131,6 +137,7 @@ readDudlesFile = do
                 Right f  -> return f
                 Left err -> errorM (pack err) >> return mempty
 
+withDudlesFile :: (Dudles -> BotReacting a b (Maybe Dudles)) -> BotReacting a b ()
 withDudlesFile action = readDudlesFile >>= action >>= maybe (return ()) writeDudlesFile
 
 writeDudlesFile dudles = do
@@ -144,15 +151,15 @@ saveDudleToFile shortname url = withDudlesFile $ \dudles -> do
             , dUrl = url
             , dLastChecked = date
             }
-    insertMap shortname new_dudle dudles
+    return $ Just $ insertMap shortname new_dudle dudles
 
 removeDudleFromFile shortname = do
     dudles <- readDudlesFile
-    writeDudlesFile $ delete shortname dudles
+    writeDudlesFile $ deleteMap shortname dudles
     return $ shortname `member` dudles
 
 updateDudleDate shortname date = withDudlesFile $
-    return . Just . adjustMap (\d@Dudle{dLastChecked} -> d {dLastChecked = date})
+    return . Just . adjustMap (\d@Dudle{dLastChecked} -> d {dLastChecked = date}) shortname
 
 checkAllDudles = withDudlesFile $ \dudles ->
     Just <$> foldM (checkDudleFeed publishEvents) dudles dudles
@@ -196,21 +203,22 @@ publishEvents dudle events
         for_ eventsChron $ messageRoom "#dudle"
         messageRoom "#dudle" $ "Mehr Infos direkt hier: " ++ dUrl dudle
 
+parseTotal :: BL.ByteString -> Maybe [(Text, Text)]
 parseTotal body = do
     hi <- header_items
-    return $ mapFromList $ zip hi summary_items
+    return $ zip hi summary_items
   where
     -- TODO Handle errors
     doc = parseLBS_ def body
     cursor = fromDocument doc
     header_rows :: Maybe [Cursor.Cursor]
-    header_rows = (tr $| child :: [Cursor]) `index` 2 >>= ($| child)
+    header_rows = ($| child) <$> (tr $| child :: [Cursor]) `index` 2
       where
         [tr] = cursor $// attributeIs "class" "participanttable" &// element "thead" &// element "tr"
 --    header_rows = $('#participanttable > thead > tr:nth-child(2)').children()
     header_items = elementsOfColumn <$> header_rows
 
-    summary_rows = cursor $// attributeIs "class" "summary" &| child
+    summary_rows = join $ cursor $// attributeIs "class" "summary" &| child
     summary_items = elementsOfColumn summary_rows
 
 
