@@ -23,11 +23,11 @@
 
 module BDay where
 
-import           Data.Text        (toTitle)
-import           Data.Time
-import           Marvin.Prelude
-import           Marvin.Util.JSON
-import           System.Cron
+import Marvin.Prelude
+import Marvin.Util.JSON
+import Data.Time
+import System.Cron
+import Data.Text.Lazy (toTitle)
 
 dontShow = 1900
 
@@ -35,7 +35,7 @@ dontShow = 1900
 defaultBdayDatabase = "data/bday.json"
 
 
-type Birthdays = HashMap Text Day
+type Birthdays = HashMap LText Day
 
 
 script :: IsAdapter a => ScriptInit a
@@ -54,10 +54,10 @@ script = defineScript "bday" $ do
             let
                 (year, month, day) = toGregorian $ utctDay today
                 (bDayYear, bDayMonth, bDayDay) = toGregorian bday
-            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ toStrict $ format ":tada: Alles Gute zum Geburtstag, {}! :tada:" [toTitle name]
-
-    void $ liftIO $ execSchedule $ do
-        addJob congratulate "00 00 9 * * *"
+            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ format ":tada: Alles Gute zum Geburtstag, {}! :tada:" [toTitle name]
+    
+    void $ liftIO $ execSchedule $
+        addJob congratulate "00 00 9 * * *"    
 
     respond (r [CaseInsensitive] "(birthday|bday|geburtstag)\\??$") $ do
         today <- utctDay <$> liftIO getCurrentTime
@@ -80,10 +80,10 @@ script = defineScript "bday" $ do
 
             diffStr
                 | daysDiff == 0 = "heute!"
-                | otherwise = toStrict $ format "in nur {} Tagen." [daysDiff]
+                | otherwise = format "in nur {} Tagen." [daysDiff]
 
             msgStr
-                | length birthdayBoysAndGirls == 1 = toStrict $ format "Das nächste Geburtstagskind ist {}" [headEx birthdayBoysAndGirls]
+                | length birthdayBoysAndGirls == 1 = format "Das nächste Geburtstagskind ist {}" [headEx birthdayBoysAndGirls]
                 | otherwise = "Die nächsten Geburstage sind von " ++ intercalate ", " (initEx birthdayBoysAndGirls) ++ " und " ++ last_
         send $ msgStr ++ " " ++ diffStr
 
@@ -97,7 +97,7 @@ script = defineScript "bday" $ do
             "liste" -> return ()
             _ ->  case lookup name bdays of
                     Just bday -> formatBirthdayInfo name bday >>= send
-                    Nothing -> send $ toStrict $ format "Sorry, ich kenne keinen Geburtstag von {}." [name]
+                    Nothing -> send $ format "Sorry, ich kenne keinen Geburtstag von {}." [name]
 
     respond (r [CaseInsensitive] "(birthday|bday|geburtstag) list(e?)") $ do
         send "Ich kenne folgende Geburtstage:"
@@ -105,12 +105,12 @@ script = defineScript "bday" $ do
             formatBirthdayInfo key value >>= send
 
 
-formatBirthdayInfo :: MonadIO m => Text -> Day -> m Text
+formatBirthdayInfo :: MonadIO m => LText -> Day -> m LText
 formatBirthdayInfo name birthday
-    | birthdayYear == dontShow = return $ toStrict $ format "{} hat am {}.{}. Geburtstag." (toTitle name, birthdayDay, birthdayMonth)
+    | birthdayYear == dontShow = return $ format "{} hat am {}.{}. Geburtstag." (toTitle name, birthdayDay, birthdayMonth)
     | otherwise = do
         today <- utctDay <$> liftIO getCurrentTime
-        let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday
-        return $ toStrict $ format "{} wurde am {}.{}. geboren. Das war vor {} Jahren! :O" (toTitle name, birthdayDay, birthdayMonth, age)
+        let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday 
+        return $ format "{} wurde am {}.{}. geboren. Das war vor {} Jahren! :O" (toTitle name, birthdayDay, birthdayMonth, age)          
   where
     (birthdayYear, birthdayMonth, birthdayDay) = toGregorian birthday

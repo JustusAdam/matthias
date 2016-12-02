@@ -30,5 +30,5 @@ script = defineScript "qr" $
         case eitherDecode' (r^.responseBody) :: Either String Value of
             Left err -> errorM $ "Unreadable json " ++ pack err
             Right json ->
-                send $ json ^?! nth 0 . key "symbol" . nth 0 . key "data" . _String
+                send $ fromStrict $ json ^?! nth 0 . key "symbol" . nth 0 . key "data" . _String
   where encodeURIComponent = undefined

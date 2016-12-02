@@ -14,8 +14,8 @@
 --   kiliankoe
 module DrSommer where
 
-import           Data.Text      (replace)
-import           Marvin.Prelude
+import Marvin.Prelude
+import Data.Text.Lazy (replace)
 
 
 script :: IsAdapter a => ScriptInit a
@@ -24,7 +24,7 @@ script = defineScript "drsommer" $ do
         msg <- getMessage
         name <- randomFrom names
         i <- randomValFromRange (10, 15)
-        messageRoom "#dr_sommer" $ toStrict $ format "\"{}\" - {} ({})" (content msg, name, i :: Int)
+        messageRoom "#dr_sommer" $ format "\"{}\" - {} ({})" (content msg, name, i :: Int)
 
     -- help matthias respond to priv messages as well
     respond (r [CaseInsensitive] "(hey |hallo |lieber )?dr\\.? sommer,?") $ do
@@ -32,10 +32,10 @@ script = defineScript "drsommer" $ do
         let question = replace (content msg) "matthias " ""
         name <- randomFrom names
         i <- randomValFromRange (10, 15)
-        messageRoom "#dr_sommer" $ toStrict $ format "\"#{}\" - {} ({})" (question, name, i :: Int)
+        messageRoom "#dr_sommer" $ format "\"#{}\" - {} ({})" (question, name, i :: Int)
 
 
-names :: [Text]
+names :: [LText]
 names = [
     "Shantalle",
     "Schackeline",

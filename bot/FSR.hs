@@ -20,11 +20,11 @@
 module FSR where
 
 
-import           Control.Lens   hiding (index)
-import           Data.Text      (strip)
-import           Data.Time
-import           Marvin.Prelude
-import           Network.Wreq
+import Marvin.Prelude
+import Data.Time
+import Network.Wreq
+import Control.Lens hiding (index)
+import Data.Text.Lazy (strip)
 
 
 getDay (_, _, day) = day
@@ -41,7 +41,7 @@ script = defineScript "fsr" $ do
                 case toGregorian <$> parseTimeM False defaultTimeLocale (iso8601DateFormat Nothing) (unpack date) of
                     Nothing -> errorM $ "Unparseable date " ++ date
                     Just dateobj | getDay dateobj /= 1 -> send "Das war leider kein Sitzungsdatum."
-                    Just (year, _, day) -> send $ toStrict $ format "https://www.ifsr.de/protokolle/{}/#{date.slice(1, date.length)}.pdf" (drop 1 $ show year, drop 1 date)
+                    Just (year, _, day) -> send $ format "https://www.ifsr.de/protokolle/{}/#{date.slice(1, date.length)}.pdf" (drop 1 $ show year, drop 1 date)
 
     respond (r [CaseInsensitive] "ese") $ do
         currentdate <- utctDay <$> liftIO getCurrentTime
@@ -51,11 +51,11 @@ script = defineScript "fsr" $ do
             Just esedate -> do
                 let datediff = diffDays currentdate esedate
 
-                send $ toStrict $ format "Nur noch {} Tage bis zur ESE 2016. Vermutlich :stuck_out_tongue_winking_eye:" [datediff]
+                send $ format "Nur noch {} Tage bis zur ESE 2016. Vermutlich :stuck_out_tongue_winking_eye:" [datediff]
 
     respond (r [CaseInsensitive] "(wer|jemand) (da|im (büro|buero))|licht an)\\?") $ do
         r <- liftIO $ get "https://www.ifsr.de/buerostatus/output.php"
-        case strip $ toStrict $ decodeUtf8 $ r^.responseBody of
+        case strip $ decodeUtf8 $ r^.responseBody of
             "1" -> send "Scheint so."
             "0" -> send "Glaub nicht."
             _ -> send "Keine Ahnung, Sebastian hat schon wieder unerwartet was geändert!"
