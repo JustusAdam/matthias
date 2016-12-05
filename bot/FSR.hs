@@ -23,8 +23,10 @@ module FSR where
 import Marvin.Prelude
 import Data.Time
 import Network.Wreq
-import Control.Lens hiding (index)
-import Data.Text.Lazy (strip)
+import Control.Lens
+import Data.List
+import Data.Char
+import Data.ByteString.Lazy.Char8 (unpack) 
 
 
 getDay (_, _, day) = day
@@ -32,18 +34,18 @@ getDay (_, _, day) = day
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "fsr" $ do
-    respond (r [CaseInsensitive] "protokoll(.*)") $ do
+    respond (r [caseless] "protokoll(.*)") $ do
         match <- getMatch
-        case match `index` 1 of
-            Just "" -> send "https://www.ifsr.de/protokolle/current.pdf"
-            Nothing -> send "https://www.ifsr.de/protokolle/current.pdf"
-            Just date ->
-                case toGregorian <$> parseTimeM False defaultTimeLocale (iso8601DateFormat Nothing) (unpack date) of
+        case match of
+            (_:"":_) -> send "https://www.ifsr.de/protokolle/current.pdf"
+            [_] -> send "https://www.ifsr.de/protokolle/current.pdf"
+            (_:date:_) ->
+                case toGregorian <$> parseTimeM False defaultTimeLocale (iso8601DateFormat Nothing) date of
                     Nothing -> errorM $ "Unparseable date " ++ date
                     Just dateobj | getDay dateobj /= 1 -> send "Das war leider kein Sitzungsdatum."
-                    Just (year, _, day) -> send $ format "https://www.ifsr.de/protokolle/{}/#{date.slice(1, date.length)}.pdf" (drop 1 $ show year, drop 1 date)
+                    Just (year, _, day) -> send $ printf "https://www.ifsr.de/protokolle/%v/%v.pdf" (drop 1 $ show year) (drop 1 date)
 
-    respond (r [CaseInsensitive] "ese") $ do
+    respond (r [caseless] "ese") $ do
         currentdate <- utctDay <$> liftIO getCurrentTime
         esedate <- getConfigVal "esedate"
         case esedate >>= parseTimeM False defaultTimeLocale (iso8601DateFormat Nothing) of
@@ -51,18 +53,18 @@ script = defineScript "fsr" $ do
             Just esedate -> do
                 let datediff = diffDays currentdate esedate
 
-                send $ format "Nur noch {} Tage bis zur ESE 2016. Vermutlich :stuck_out_tongue_winking_eye:" [datediff]
+                send $ printf "Nur noch %v Tage bis zur ESE 2016. Vermutlich :stuck_out_tongue_winking_eye:" datediff
 
-    respond (r [CaseInsensitive] "(wer|jemand) (da|im (büro|buero))|licht an)\\?") $ do
+    respond (r [caseless] "(wer|jemand) (da|im (büro|buero))|licht an)\\?") $ do
         r <- liftIO $ get "https://www.ifsr.de/buerostatus/output.php"
-        case strip $ decodeUtf8 $ r^.responseBody of
-            "1" -> send "Scheint so."
-            "0" -> send "Glaub nicht."
-            _ -> send "Keine Ahnung, Sebastian hat schon wieder unerwartet was geändert!"
+        send $ case dropWhile isSpace $ dropWhileEnd isSpace $ unpack $ r^.responseBody of
+                  "1" -> "Scheint so."
+                  "0" -> "Glaub nicht."
+                  _ -> "Keine Ahnung, Sebastian hat schon wieder unerwartet was geändert!"
 
-    respond (r [CaseInsensitive] "(buero|büro)(status)?") $
+    respond (r [caseless] "(buero|büro)(status)?") $
         send "https://www.ifsr.de/buerostatus/image.php?h=6"
 
-    hear (r [CaseInsensitive] "(sind wir (beschlussfähig|beschlussfaehig))") $
+    hear (r [caseless] "(sind wir (beschlussfähig|beschlussfaehig))") $
         -- How about a list of the elected memebers and then check if enough are online in slack? :P
         send "Einmal durchzählen, bitte! Ich fang' an, 0!"

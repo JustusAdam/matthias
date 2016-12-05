@@ -39,7 +39,7 @@ packages:
 - '.'
 - location:
     git: https://github.com/JustusAdam/marvin
-    commit: dbd2895fe112bbd89ebe54fbb5b322c2ff4fa60d
+    commit: 46cd98d179be6f8fc4e385a76f9ea38340a687ad
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
 extra-deps: []

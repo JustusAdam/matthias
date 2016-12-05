@@ -27,7 +27,15 @@ import Marvin.Prelude
 import Marvin.Util.JSON
 import Data.Time
 import System.Cron
-import Data.Text.Lazy (toTitle)
+import Data.HashMap.Strict (HashMap, toList, mapWithKey)
+import qualified Data.HashMap.Strict as HM
+import Data.Maybe (fromMaybe)
+import qualified Data.ByteString.Lazy as B
+import Data.Foldable (for_)
+import Control.Monad
+import Control.Lens
+import Data.Char
+import Data.List (intercalate)
 
 dontShow = 1900
 
@@ -35,82 +43,83 @@ dontShow = 1900
 defaultBdayDatabase = "data/bday.json"
 
 
-type Birthdays = HashMap LText Day
+type Birthdays = HashMap String Day
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "bday" $ do
     bdayDBFile <- fromMaybe defaultBdayDatabase <$> getConfigVal "db"
-    bdayFile <- liftIO $ readFile bdayDBFile
+    bdayFile <- liftIO $ B.readFile bdayDBFile
     bdays <- case eitherDecode' bdayFile of
                 Left err -> do
-                    errorM $ "could not read bdays.json: " ++ pack err
+                    errorM $ "could not read bdays.json: " ++ err
                     return mempty
                 Right b -> return b
 
     congratulate <- extractAction $
-        for_ (mapToList (bdays :: Birthdays)) $ \(name, bday) -> do
+        for_ (toList (bdays :: Birthdays)) $ \(name, bday) -> do
             today <- liftIO getCurrentTime
             let
                 (year, month, day) = toGregorian $ utctDay today
                 (bDayYear, bDayMonth, bDayDay) = toGregorian bday
-            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ format ":tada: Alles Gute zum Geburtstag, {}! :tada:" [toTitle name]
+            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ printf ":tada: Alles Gute zum Geburtstag, %v! :tada:" (ix 0 %~ toUpper $ name)
     
     void $ liftIO $ execSchedule $
         addJob congratulate "00 00 9 * * *"    
 
-    respond (r [CaseInsensitive] "(birthday|bday|geburtstag)\\??$") $ do
+    respond (r [caseless] "(birthday|bday|geburtstag)\\??$") $ do
         today <- utctDay <$> liftIO getCurrentTime
         let
             (yearToday, _, _) = toGregorian today
-            vallist = flip mapWithKey bdays $ \ name value -> do
+            vallist = flip mapWithKey bdays $ \ name value ->
                 let
                     (_, bdayMonth, bdayDay) = toGregorian value
                     date = fromGregorian yearToday bdayMonth bdayDay
-                if date < today
-                    then addGregorianYearsRollOver 1 date
-                    else date
+                in  if date < today
+                        then addGregorianYearsRollOver 1 date
+                        else date
 
-            date = minimumEx $ map snd $ mapToList vallist
+            date = minimum $ map snd $ toList vallist
 
-            birthdayBoysAndGirls = map (toTitle . fst) $ filter ((== date)  . snd) $ mapToList vallist
+            birthdayBoysAndGirls = map ((ix 0 %~ toUpper) . fst) $ filter ((== date)  . snd) $ toList vallist
 
             daysDiff = diffDays date today
-            last_ = lastEx birthdayBoysAndGirls
+            last_ = last birthdayBoysAndGirls
 
             diffStr
                 | daysDiff == 0 = "heute!"
-                | otherwise = format "in nur {} Tagen." [daysDiff]
+                | otherwise = printf "in nur %v Tagen." daysDiff
 
-            msgStr
-                | length birthdayBoysAndGirls == 1 = format "Das nächste Geburtstagskind ist {}" [headEx birthdayBoysAndGirls]
-                | otherwise = "Die nächsten Geburstage sind von " ++ intercalate ", " (initEx birthdayBoysAndGirls) ++ " und " ++ last_
+            msgStr = 
+                case birthdayBoysAndGirls of
+                    [first] -> printf "Das nächste Geburtstagskind ist %v" first
+                    _ -> "Die nächsten Geburstage sind von " ++ intercalate ", " (init birthdayBoysAndGirls) ++ " und " ++ last_
         send $ msgStr ++ " " ++ diffStr
 
-    respond (r [CaseInsensitive] "(birthday|bday|geburtstag) (.+)") $ do
+    respond (r [caseless] "(birthday|bday|geburtstag) (.+)") $ do
         (_:name':_) <- getMatch
-        let name = toLower name
+        let name = map toLower name
 
         case name of
             -- Looks like we're going for the list below...
             "list" -> return ()
             "liste" -> return ()
-            _ ->  case lookup name bdays of
+            _ ->  case HM.lookup name bdays of
                     Just bday -> formatBirthdayInfo name bday >>= send
-                    Nothing -> send $ format "Sorry, ich kenne keinen Geburtstag von {}." [name]
+                    Nothing -> send $ printf "Sorry, ich kenne keinen Geburtstag von %v." name
 
-    respond (r [CaseInsensitive] "(birthday|bday|geburtstag) list(e?)") $ do
+    respond (r [caseless] "(birthday|bday|geburtstag) list(e?)") $ do
         send "Ich kenne folgende Geburtstage:"
-        for_ (mapToList bdays) $ \(key, value) ->
+        for_ (toList bdays) $ \(key, value) ->
             formatBirthdayInfo key value >>= send
 
 
-formatBirthdayInfo :: MonadIO m => LText -> Day -> m LText
+formatBirthdayInfo :: MonadIO m => String -> Day -> m String
 formatBirthdayInfo name birthday
-    | birthdayYear == dontShow = return $ format "{} hat am {}.{}. Geburtstag." (toTitle name, birthdayDay, birthdayMonth)
+    | birthdayYear == dontShow = return $ printf "%v hat am %v.%v. Geburtstag." (ix 0 %~ toUpper $ name) birthdayDay birthdayMonth
     | otherwise = do
         today <- utctDay <$> liftIO getCurrentTime
         let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday 
-        return $ format "{} wurde am {}.{}. geboren. Das war vor {} Jahren! :O" (toTitle name, birthdayDay, birthdayMonth, age)          
+        return $ printf "%v wurde am %v.%v. geboren. Das war vor %v Jahren! :O" (ix 0 %~ toUpper $ name) birthdayDay birthdayMonth age
   where
     (birthdayYear, birthdayMonth, birthdayDay) = toGregorian birthday

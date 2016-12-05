@@ -18,28 +18,31 @@
 -- Author:
 --   kiliankoe
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Apbdoor (script) where
 
 
 import           Control.Lens
 import           Marvin.Prelude
 import           Network.Wreq
+import Data.List
+import Data.ByteString.Lazy.Char8 (unpack)
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "apbdoor" $ do
-  respond (r [CaseInsensitive] "türstatus|tuerstatus|ist die tür kaputt\\?|ist die tuer kaputt\\?") $
+  respond (r [caseless] "türstatus|tuerstatus|ist die tür kaputt\\?|ist die tuer kaputt\\?")
     checkDoor
 
-  respond (r [CaseInsensitive] "glasschaden|rate mal, was wieder kaputt ist|techniker ist informiert") $ do
+  respond (r [caseless] "glasschaden|rate mal, was wieder kaputt ist|techniker ist informiert") $ do
     setDoor "yes"
     send "Orr ne, schon wieder?!"
 
-  respond (r [CaseInsensitive] "tür ist wieder ganz|tuer ist wieder ganz") $ do
+  respond (r [caseless] "tür ist wieder ganz|tuer ist wieder ganz") $ do
     setDoor "no"
     send "/giphy party"
 
-  respond (r [CaseInsensitive] "tür ist weg|tuer ist weg") $ do
+  respond (r [caseless] "tür ist weg|tuer ist weg") $ do
     setDoor "maybe"
     send "Ähm... Ahja?"
 
@@ -48,7 +51,7 @@ checkDoor :: IsAdapter a => BotReacting a MessageReactionData ()
 checkDoor = do
   r <- liftIO $ get "http://tuer.fsrleaks.de"
 
-  let body = r^.responseBody
+  let body = unpack $ r^.responseBody
   -- TODO Add random
   if
     | "Ja" `isInfixOf` body -> randomFrom yesMsgs >>= send
@@ -56,7 +59,7 @@ checkDoor = do
     | otherwise -> randomFrom maybeMsgs >>= send
 
 
-setDoor state = liftIO $ get (unpack $ format "http://door.fsrleaks.de/set.php?{}" [state :: Text])
+setDoor state = liftIO $ get (printf "http://door.fsrleaks.de/set.php?%v" (state :: String))
 
 yesMsgs =
   [ "Jop, Tür ist im Eimer."

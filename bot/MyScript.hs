@@ -7,7 +7,7 @@ import           Marvin.Prelude
 
 script :: ScriptInit SlackRTMAdapter
 script = defineScript "my-script" $ do
-    hear (r [CaseInsensitive] "ping") $ do -- react to any message
+    hear (r [caseless] "ping") $ do -- react to any message
         msg <- getMessage -- read the message contents
         infoM (content msg) -- logging
         send "Pong" -- sending messages back
