@@ -1,0 +1,40 @@
+import Marvin.Run
+import Prelude (IO)
+import Marvin.Adapter.Slack
+
+import qualified Apbdoor
+import qualified BDay
+import qualified BTC
+import qualified DrSommer
+import qualified Dudle
+import qualified Firat
+import qualified FSR
+import qualified Geruecht
+import qualified Main
+import qualified MyScript
+import qualified QR
+import qualified Random
+import qualified SimpleResponses
+import qualified Stoll
+import qualified SudoGer
+import qualified Version
+import qualified Video
+import qualified hubot-diagnostics
+import qualified hubot-help
+import qualified hubot-google-images
+import qualified hubot-google-translate
+import qualified hubot-maps
+import qualified hubot-redis-brain
+import qualified hubot-rules
+import qualified hubot-shipit
+import qualified hubot-qr
+import qualified hubot-calculator
+import qualified hubot-xkcd
+import qualified hubot-dvb
+import qualified hubot-clarifai2
+
+scripts :: [ScriptInit SlackRTMAdapter]
+scripts = [ Apbdoor.script, BDay.script, BTC.script, DrSommer.script, Dudle.script, Firat.script, FSR.script, Geruecht.script, Main.script, MyScript.script, QR.script, Random.script, SimpleResponses.script, Stoll.script, SudoGer.script, Version.script, Video.script, hubot-diagnostics.script, hubot-help.script, hubot-google-images.script, hubot-google-translate.script, hubot-maps.script, hubot-redis-brain.script, hubot-rules.script, hubot-shipit.script, hubot-qr.script, hubot-calculator.script, hubot-xkcd.script, hubot-dvb.script, hubot-clarifai2.script ]
+
+main :: IO ()
+main = runMarvin scripts

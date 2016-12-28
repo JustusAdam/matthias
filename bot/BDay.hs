@@ -62,7 +62,7 @@ script = defineScript "bday" $ do
             let
                 (year, month, day) = toGregorian $ utctDay today
                 (bDayYear, bDayMonth, bDayDay) = toGregorian bday
-            when (bDayMonth == month && day == bDayDay) $ messageRoom "#random" $ printf ":tada: Alles Gute zum Geburtstag, %v! :tada:" (ix 0 %~ toUpper $ name)
+            when (bDayMonth == month && day == bDayDay) $ messageChannel "#random" $ printf ":tada: Alles Gute zum Geburtstag, %v! :tada:" (ix 0 %~ toUpper $ name)
     
     void $ liftIO $ execSchedule $
         addJob congratulate "00 00 9 * * *"    

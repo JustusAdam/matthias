@@ -21,16 +21,17 @@ import           Data.Aeson
 import           Data.Aeson.Lens
 import           Marvin.Prelude
 import           Network.Wreq
+import Data.Text (pack, unpack)
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "video" $
-    respond (r [CaseInsensitive] "video( me)? (.*)") $ do
+    respond (r [caseless] "video( me)? (.*)") $ do
         (_:_:query:_) <- getMatch
         let opts = defaults
                        & param "v" .~ ["1.0"]
                        & param "rsz" .~ ["8"]
-                       & param "q" .~ [query]
+                       & param "q" .~ [pack query]
                        & param "safe" .~ ["active"]
         r <- liftIO $ getWith opts "https://ajax.googleapis.com/ajax/services/search/video"
 
@@ -39,7 +40,7 @@ script = defineScript "video" $
                 case r^.responseBody ^? key "responseData" . key "results" . _Array of
                     Just v | not $ null v -> do
                         one <- randomFrom v
-                        maybe (return ()) send $ one ^? key "url" . _String
+                        maybe (return ()) (send . unpack) $ one ^? key "url" . _String
                     _ -> return ()
 
             else send "Bad response status"

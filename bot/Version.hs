@@ -20,5 +20,5 @@ import           Marvin.Prelude
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "version" $
-    respond (r [CaseInsensitive] "version") $
+    respond (r [caseless] "version") $
         send $ "Ich bin Matthias @ https://github.com/fsr/matthias/commit/" ++ $(gitHash)

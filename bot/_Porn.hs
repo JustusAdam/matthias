@@ -23,7 +23,7 @@ import           Marvin.Prelude
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "porn" $ do
-    respond (r [CaseInsensitive] "porn (.+)") $ do
+    respond (r [caseless] "porn (.+)") $ do
         match <- getMatch
         let name = match `indexEx` 1
         if name == "me"

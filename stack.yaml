@@ -37,12 +37,9 @@ resolver: lts-7.2
 # will not be run. This is useful for tweaking upstream packages.
 packages:
 - '.'
-- location:
-    git: https://github.com/JustusAdam/marvin
-    commit: 46cd98d179be6f8fc4e385a76f9ea38340a687ad
 # Dependency packages to be pulled from upstream that are not in the resolver
 # (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps: ["marvin-0.0.4"]
 
 # Override default flag values for local packages and extra-deps
 flags: {}

@@ -120,22 +120,22 @@ script = defineScript "mensa" $ do
                 "Heute @ *#{name}*:\n#{data.map(formatOutput).join('\n')}"
             )
 
-    respond (r [CaseInsensitive] "mensa$") $ do
+    respond (r [caseless] "mensa$") $ do
         def <- default_mensa
         generic_resp_func default_mensa send
 
-    respond (r [CaseInsensitive] "mensa (\S.*)") $ do
+    respond (r [caseless] "mensa (\S.*)") $ do
         match <- getMatch
         let mensa = match `indexEx`1
         if "bild" `isInfixOf` mensa
             then return ()
             else generic_resp_func mensa send
 
-    respond  (r [CaseInsensitive] "mensa bild (\d*)") $ do
+    respond  (r [caseless] "mensa bild (\d*)") $ do
         (_:imgid:_) <- getMatch
         getImage imgid
 
-    respond (r [CaseInsensitive] "mensen") $ do
+    respond (r [caseless] "mensen") $ do
         let names = catMaybes $ map (headMay . fst) mensen
         send $ "Ich kann dir heutige Speisepläne für die folgenden Mensen holen:\n - " ++ intercalate ", " names ++ "\nSprich' mich einfach mit `matthias mensa <mensa>` an."
 

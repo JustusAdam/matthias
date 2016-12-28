@@ -17,23 +17,23 @@ module Stoll where
 
 
 import           Data.Maybe     (fromJust)
-import           Data.Text      (replace, toTitle)
+import Data.String.Utils
 import           Marvin.Prelude
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "stoll" $
-    respond (r [CaseInsensitive] "stoll me") $ do
-        quote <- randomFrom stoll_quotes
+    respond (r [caseless] "stoll me") $ do
+        quote <- randomFrom stollQuotes
         msg <- getMessage
-        UserInfo{username} <- fromJust <$> getUserInfo (sender msg)
-        let quote = replace "{target}" (toTitle username) quote
+        username <- getUsername (sender msg)
+        let quote = replace "{target}" username quote
 
         send quote
 
 
-stoll_quotes :: [Text]
-stoll_quotes =
+stollQuotes :: [String]
+stollQuotes =
     [ "Ist ne stehende Welle, junge Dame."
     , "Licht ist keine Grenzgeschwindigkeit, vorsicht. Skalarwellen und stehende Welle hat ein vielfaches mehr."
     , "Auf die Maßeinheiten der Kernphysik hab ich bewusst verzichtet, denn außer mir würde das kaum jemand begreifen."

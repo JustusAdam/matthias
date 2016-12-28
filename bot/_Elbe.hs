@@ -22,7 +22,7 @@ import           Network.Wreq
 
 
 script = defineScript "elbe" $ do
-    respond (r [CaseInsensitive] "elbpegel|elbe") $ checkPegel
+    respond (r [caseless] "elbpegel|elbe") $ checkPegel
 
 checkPegel = do
     r <- liftIO $ getWith (defaults & header "Accept" .~ ["application/json"]) "http://www.pegelonline.wsv.de/webservices/rest-api/v2/stations/DRESDEN/W/measurements.json?start=P0DT0H15M"

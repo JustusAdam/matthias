@@ -25,7 +25,7 @@ script = defineScript "drsommer" $ do
         msg <- getMessage
         name <- randomFrom names
         i <- randomValFromRange (10, 15)
-        messageRoom "#dr_sommer" $ printf "\"%v\" - %v (%v)" (content msg) name (i :: Int)
+        messageChannel "#dr_sommer" $ printf "\"%v\" - %v (%v)" (content msg) name (i :: Int)
 
     -- help matthias respond to priv messages as well
     respond (r [caseless] "(hey |hallo |lieber )?dr\\.? sommer,?") $ do
@@ -33,7 +33,7 @@ script = defineScript "drsommer" $ do
         let question = replace (content msg) "matthias " ""
         name <- randomFrom names
         i <- randomValFromRange (10, 15)
-        messageRoom "#dr_sommer" $ printf "\"%v\" - %v (%v)" question name (i :: Int)
+        messageChannel "#dr_sommer" $ printf "\"%v\" - %v (%v)" question name (i :: Int)
 
 
 names :: [String]
