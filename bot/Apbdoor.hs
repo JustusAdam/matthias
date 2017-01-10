@@ -27,39 +27,35 @@ import           Marvin.Prelude
 import           Network.Wreq
 import Data.List
 import Data.ByteString.Lazy.Char8 (unpack)
+import Marvin.Interpolate.String
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "apbdoor" $ do
-  respond (r [caseless] "türstatus|tuerstatus|ist die tür kaputt\\?|ist die tuer kaputt\\?")
-    checkDoor
+  respond (r [CaseInsensitive] "türstatus|tuerstatus|ist die tür kaputt\\?|ist die tuer kaputt\\?") $ do
+    r <- liftIO $ get "http://tuer.fsrleaks.de"
 
-  respond (r [caseless] "glasschaden|rate mal, was wieder kaputt ist|techniker ist informiert") $ do
+    let body = unpack $ r^.responseBody
+    -- TODO Add random
+    if
+      | "Ja" `isInfixOf` body -> randomFrom yesMsgs >>= send
+      | "Nein" `isInfixOf` body -> randomFrom noMsgs >>= send
+      | otherwise -> randomFrom maybeMsgs >>= send
+
+  respond (r [CaseInsensitive] "glasschaden|rate mal, was wieder kaputt ist|techniker ist informiert") $ do
     setDoor "yes"
     send "Orr ne, schon wieder?!"
 
-  respond (r [caseless] "tür ist wieder ganz|tuer ist wieder ganz") $ do
+  respond (r [CaseInsensitive] "tür ist wieder ganz|tuer ist wieder ganz") $ do
     setDoor "no"
     send "/giphy party"
 
-  respond (r [caseless] "tür ist weg|tuer ist weg") $ do
+  respond (r [CaseInsensitive] "tür ist weg|tuer ist weg") $ do
     setDoor "maybe"
     send "Ähm... Ahja?"
 
 
-checkDoor :: IsAdapter a => BotReacting a MessageReactionData ()
-checkDoor = do
-  r <- liftIO $ get "http://tuer.fsrleaks.de"
-
-  let body = unpack $ r^.responseBody
-  -- TODO Add random
-  if
-    | "Ja" `isInfixOf` body -> randomFrom yesMsgs >>= send
-    | "Nein" `isInfixOf` body -> randomFrom noMsgs >>= send
-    | otherwise -> randomFrom maybeMsgs >>= send
-
-
-setDoor state = liftIO $ get (printf "http://door.fsrleaks.de/set.php?%v" (state :: String))
+setDoor state = liftIO $ get $(isS "http://door.fsrleaks.de/set.php?#{state :: String}")
 
 yesMsgs =
   [ "Jop, Tür ist im Eimer."

@@ -49,9 +49,9 @@ simplelistens =
 script :: IsAdapter a => ScriptInit a
 script = defineScript "simpleresponses" $ do
     for_ simplelistens $ \(trigger, answer) -> do
-        hear (r [caseless] trigger) $ do
+        hear (r [CaseInsensitive] trigger) $ do
             rand <- randomValFromRange (0, 5)
             when (rand == (0 :: Int)) $ send answer
 
-    for_ simpleresponses $ \(trigger, answer) -> respond (r [caseless] trigger) $ send answer
+    for_ simpleresponses $ \(trigger, answer) -> respond (r [CaseInsensitive] trigger) $ send answer
 

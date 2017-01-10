@@ -18,7 +18,10 @@ module Version where
 import           Development.GitRev
 import           Marvin.Prelude
 
+hash :: String
+hash = $(gitHash)
+
 script :: IsAdapter a => ScriptInit a
 script = defineScript "version" $
-    respond (r [caseless] "version") $
-        send $ "Ich bin Matthias @ https://github.com/fsr/matthias/commit/" ++ $(gitHash)
+    respond (r [CaseInsensitive] "version") $
+        send $(isL "Ich bin Matthias @ https://github.com/fsr/matthias/commit/#{hash}")

@@ -23,22 +23,24 @@ import Control.Lens
 import Text.XML.Cursor as C
 import Text.XML
 import Data.Text (unpack, replace, strip)
+import Data.Text.Lazy (fromStrict)
+import Marvin.Interpolate.String
 
 
 script :: IsAdapter a => ScriptInit a
-script = defineScript "gerücht" $ do
-    respond (r [caseless] "geruecht|gerücht") $ do
+script = defineScript "gerücht" $
+    respond (r [CaseInsensitive] "geruecht|gerücht") $ do
         user <- requireConfigVal "username"
         pw <- requireConfigVal "password"
-        r <- liftIO $ get $ "http://" ++ user ++ ":" ++ pw ++ "@leaks.fsrleaks.de/index.php"
+        r <- liftIO $ get $(isS "http://#{user :: String}:#{pw :: String}@leaks.fsrleaks.de/index.php")
 
         let cursor = fromDocument $ parseLBS_ def $ r^.responseBody
             txt = head $ cursor $// C.element "div" &/ C.content
-            replaced = unpack $ strip $ replace "Psst..." "" txt
+            replaced = strip $ replace "Psst..." "" txt
         
         rand <- randomFrom prefixes
 
-        send $ rand ++ replaced
+        send $ fromStrict $ rand `mappend` replaced
 
             -- .get() (err, res, body) ->
             --     $ = cheerio.load body

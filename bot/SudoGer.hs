@@ -18,7 +18,6 @@ import           Marvin.Prelude
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "sudo_ger" $
-    respond (r [caseless] "sudo (.*)") $ do
+    respond (r [CaseInsensitive] "sudo (.*)") $ do
         match <- getMatch
-        let befehl = match !! 1
-        send $ "Ok! Ich " ++ befehl
+        send $(isL "Ok! Ich #{match !! 1}")

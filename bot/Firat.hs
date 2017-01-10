@@ -19,7 +19,7 @@ import           Marvin.Prelude
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "firat" $
-    respond (r [caseless] "firat") $ do
+    respond (r [CaseInsensitive] "firat") $ do
         send "*Döner Gerichte*\n\
             \1. *Döner* normal - 3,80€\n\
             \2. *Döner* mit Käse - 4,40€\n\

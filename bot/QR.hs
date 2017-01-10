@@ -20,16 +20,16 @@ import           Data.Aeson
 import           Data.Aeson.Lens
 import           Marvin.Prelude
 import           Network.Wreq
-import Data.Text (unpack)
+import Marvin.Interpolate.String
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "qr" $
-    respond (r [caseless] "qr (.*)") $ do
+    respond (r [CaseInsensitive] "qr (.*)") $ do
         match <- getMatch
-        let url = encodeURIComponent $ match !! 1
-        r <- liftIO $ get $ "https://api.qrserver.com/v1/read-qr-code/?fileurl=" ++ url
+        let url = encodeURIComponent $ match !! 1 :: String
+        r <- liftIO $ get $(isS "https://api.qrserver.com/v1/read-qr-code/?fileurl=#{url}")
         case eitherDecode' (r^.responseBody) :: Either String Value of
-            Left err -> errorM $ "Unreadable json " ++ err
+            Left err -> logErrorN $(isT "Unreadable json #{err}")
             Right json ->
-                send $ unpack $ json ^?! nth 0 . key "symbol" . nth 0 . key "data" . _String
+                send $(isL "#{json ^?! nth 0 . key \"symbol\" . nth 0 . key \"data\" . _String}")
   where encodeURIComponent = undefined

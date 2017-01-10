@@ -16,27 +16,27 @@ module DrSommer where
 
 
 import Marvin.Prelude
-import Data.List.Extra
+import qualified Data.Text.Lazy as L
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "drsommer" $ do
-    hear (r [caseless] "^(hey |hallo |lieber )?dr\\.? sommer,?") $ do
+    hear (r [CaseInsensitive] "^(hey |hallo |lieber )?dr\\.? sommer,?") $ do
         msg <- getMessage
         name <- randomFrom names
         i <- randomValFromRange (10, 15)
-        messageChannel "#dr_sommer" $ printf "\"%v\" - %v (%v)" (content msg) name (i :: Int)
+        messageChannel "#dr_sommer" $(isL "\"${msg}\" - #{name} (#{i :: Int})")
 
     -- help matthias respond to priv messages as well
-    respond (r [caseless] "(hey |hallo |lieber )?dr\\.? sommer,?") $ do
+    respond (r [CaseInsensitive] "(hey |hallo |lieber )?dr\\.? sommer,?") $ do
         msg <- getMessage
-        let question = replace (content msg) "matthias " ""
+        let question = L.replace msg "matthias " ""
         name <- randomFrom names
         i <- randomValFromRange (10, 15)
-        messageChannel "#dr_sommer" $ printf "\"%v\" - %v (%v)" question name (i :: Int)
+        messageChannel "#dr_sommer" $(isL "\"#{question}\" - #{name} (#{i :: Int})")
 
 
-names :: [String]
+names :: [L.Text]
 names = [
     "Shantalle",
     "Schackeline",

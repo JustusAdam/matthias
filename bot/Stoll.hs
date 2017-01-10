@@ -19,520 +19,519 @@ module Stoll where
 import           Data.Maybe     (fromJust)
 import Data.String.Utils
 import           Marvin.Prelude
+import qualified Data.Text.Lazy as L
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "stoll" $
-    respond (r [caseless] "stoll me") $ do
-        quote <- randomFrom stollQuotes
-        msg <- getMessage
-        username <- getUsername (sender msg)
-        let quote = replace "{target}" username quote
+    respond (r [CaseInsensitive] "stoll me") $ do
+        username <- getUser >>= getUsername
+        quote <- randomFrom $ stollQuotes username
 
         send quote
 
 
-stollQuotes :: [String]
-stollQuotes =
-    [ "Ist ne stehende Welle, junge Dame."
-    , "Licht ist keine Grenzgeschwindigkeit, vorsicht. Skalarwellen und stehende Welle hat ein vielfaches mehr."
-    , "Auf die Maßeinheiten der Kernphysik hab ich bewusst verzichtet, denn außer mir würde das kaum jemand begreifen."
-    , "Das ist ein ganz einfacher Algorithmus."
-    , "Primzahlen bis 1024 werden in der Computertechnik benutzt."
-    , "Darwin, Jude… klar. Da wurde die Biologie versaut – Einstein, Jude… die Physik wurde versaut, so kann ich das ganze Gebäude durchgehen."
-    , "Das hat auch die Blawatzki erkannt."
-    , "Die Wurzel aus -1 ist lösbar."
-    , "Wurzelrechnung… lächerlich."
-    , "Geht in eine kalte Fusion."
-    , "Die Erde ist ein lebender Organismus."
-    , "Es gibt einen energetischen Frühling."
-    , "Es gibt auch keine Missing Links. (…) Alles ein Schwachsinn!"
-    , "Wir haben mit Braunsgas gearbeitet."
-    , "Wir haben Blei verwandelt in Gold und Silber, Platin."
-    , "Physik – 2/3 schrott."
-    , "Ich bin auch ein Anhänger der Kataklysmen-Theorie."
-    , "Es gibt Evolution heißt AUS-wicklung, alles schon da gewesen."
-    , "Klaus Böhme, das ist derjenige, der hocheffiziente BHKWs (…) baut, mittels Braunsgas, also kalte Fusion."
-    , "Im Gegensatz zur Involution – EIN-wicklung. Ha! Physik, Physik… hä!"
-    , "Es handelt sich demnach um einen deutlichen und jederzeit reproduzierbaren Beweis für Homöopathie."
-    , "Die Zahl 12 - auch ne kosmische Zahl."
-    , "Angewandte MaTHEMAtik!"
-    , "Quarz als Skalarwelleninterferometer."
-    , "Auch ne kosmische Zahl."
-    , "Aber Vorsicht bei der Numerologie!"
-    , "Merkt ihr die Korrelation? Nachdenken!"
-    , "Man muss das dazu auch mal philosophisch betrachten."
-    , "Aber steigtert euch nicht zu tief hinein - ich denke da an die Zahl 23 und was es alles gibt."
-    , "Es gibt auch nen Vier-dimensionalen Würfel."
-    , "Vier-dimensionale Räume, gibt es!"
-    , "Skalarwellen knallen quer Kontinente und Ozeane."
-    , "Die jetzige elektromagnetische Theorie, wie sie an Schulen und Universitäten vertreten wird, ist falsch."
-    , "Mit Überlichtgeschwindigkeit, ich betone: ÜBERLICHTGESCHWINDIGKEIT!"
-    , "Das ist ausgestoßene, überschüssige Geschwindigkeit! Mehr ist das nicht Leute!"
-    , "Wer kennt die Maxwell’schen Gleichungen?"
-    , "Was sind die Pyramiden, wer weiß das? Schlüssel der Energie!"
-    , "Magnetohydrodynamik!"
-    , "Wir leben in einer Welt von Schwingungen, sprich Frequenzen, und damit korrelierender Wirbelmechanismen."
-    , "Alles ist nur Bewegung oder Geschwindigkeit oder Schwingung."
-    , "Mt diesem Braungas haben wir auch Elementtransmutationen vollbracht, allerdings machen wir das jetzt eleganter, mit einer Art Kaltlaser."
-    , "Das ist eine Aufkraft!"
-    , "Weisste was die Primzahlen bedeuten? Einen Torus - raum-zeitlich gesehen."
-    , "Alles nur störende Mikrowellen."
-    , "Das A&O in der freien - in der Physik."
-    , "Gemeint ist das organische Germanium 32."
-    , "Unsere Energiegruppe ist in der Lage das künstlich herzustellen."
-    , "Mikrowelle, Skalarwelle!"
-    , "Physik, Mathematik, Philosophie."
-    , "Wir Physiker sprechen vom sogenannten Dirac-Meer."
-    , "Die muss man anzapfen entsprechend einem Implusions-Strudel."
-    , "Sie ist ein Perpetuum Mobile!"
-    , "Das heißt eine logarithmische Spirale raum-zeitlich betrachtet nach Innen."
-    , "Das ist die menschliche Zelle im Schnitt!"
-    , "Das nennt man KALTE FUSION!"
-    , "Es gibt nur Expansionsstrudel und Implosionsstrudel."
-    , "Mikrowelle, Skalarwelle!"
-    , "Es gibt keine feste Materie - das ist ein Trugschluss."
-    , "Mann muss immer den Ursprung erkennen - den Algorithmus, meine Damen, meine Herren."
-    , "Die Natur bracht Wirbel."
-    , "Formeln sind viel besser zu Handhaben, ist wie ein Krimi."
-    , "Mathematik ist die Sprache des Universums, der Intelligenz und erspart mir 1000 Seiten zu lesen."
-    , "Man steckt erst richtig drin im Wissen, wenn man auch einer Klofrau das Raum/Zeit-Gefüge erklären kann."
-    , "Das ist eine stehende Welle, die ist sofort da."
-    , "Der Mensch ist eine energetische Matrix!"
-    , "Magie ist Physik durch wollen!"
-    , "Meine Name ist Stoll, ich bin promovierter Naturwissenschaftler."
-    , "Ich befasse mich mit freier Energie."
-    , "Implosionstechnik!"
-    , "Biologie ist Physik."
-    , "Mit Kraft!"
-    , "Das ist kein Science Fiction!"
-    , "So einfach ist das, wenn man um die neue Physik weiß!"
-    , "Ich kann auch radioaktive Strahlung neutralisieren!"
-    , "So lebt man ruhiger und energetischer."
-    , "Es gibt nur energetische Felder."
-    , "Das hatte die deutsche Luftwaffe (…) rechtzeitig erkannt."
-    , "Ganz wichtig, steht auch auf den reichsdeutschen Wissen."
-    , "So sind Höhen ohne Tiefen nicht denkbar – siehe hermetisches Gesetz des Universums."
-    , "Entscheidend ist die Länge des Frauenhaares als Sender und Empfänger."
-    , "Aber das Frauenhaar, das müssen Sie begreifen, ist magnetisch, das hat ein anderes Magnetfeld."
-    , "Ich denke an die Vril-Damen – transmediale Kontakte zum Aldebaran."
-    , "Wir hatten den ersten Videorekorder der Welt."
-    , "Die schwarze Macht – da geht es um Templerwissen und um das Deutsche Reich."
-    , "Wir hatten die erste Polaroid-Kamera – allerdings S/W-Aufnahmen."
-    , "Wir hatten Bildtelefon. Da konnte man zu bestimmten Städten telefonieren und sah sein Gegenüber – für 50 Reichspfennige."
-    , "Kann man ablesen, siehe Victor Schauberger."
-    , "Prä-Astronautik macht der."
-    , "Bis auf die Haunebu I, die war nur zu 60% Weltall-tauglich, nebenbei bemerkt."
-    , "Flugscheiben mit non-konventionellen Antrieben, Elektrogravitation und Gravitationsabschirmung und Überlichteffekt."
-    , "Wissenschaftlich, technologisch war das Deutsche Reich den Alliierten um mindestens 100 Jahre voraus, (…) moralisch um 1.000 Jahre voraus."
-    , "Wir haben versucht Quetschmetall aus den Vril-Werkstätten zum schmelzen zu bringen."
-    , "Quetschmetall auch wurde verwendet für Plasma-Antrieben von reichsdeutschen Flugscheiben."
-    , "Die starteten die Vril-Flugscheiben aus sogenannten spezial-gehärteten Silos."
-    , "Ich weiß auch mittlerweile auch, wo die Vril Odin (hinge?)startet ist - zum Aldebaran."
-    , "Das muss man natürlich alles wissen, alles das was reichsdeutsche Hochtechnologie vermag."
-    , "Heute ist Deutschland ein Entwicklungsland."
-    , "Wird sind die fünfte Wurzelrasse, die arische."
-    , "Was wir haben, die himmlischen Flugscharen, ne?"
-    , "Die weiße Rasse stammt vom Aldebaran, vergesst das nicht!"
-    , "Die erste Wurzelrasse war die Polarrasse."
-    , "Das äußerliche dieser Wesenheiten ist uns völlig schleierhaft, (..) Medusen, was weiß ich."
-    , "Alles, auch das Universum, ist rhythmisch, zyklisch aufgebaut."
-    , "Die Velociraptoren (…) hatte eine eigene Sprache, aus denen entstammen vermutlich die Reptos, iss so."
-    , "Die sind nicht weg, die haben sich ins Erdinnere verkrochen."
-    , "Als Däniken hochkam sein.. der Angehörige vom ZDF wurde erschossen."
-    , "Da findet man auch Skelette von 8 Metern Länge, humanoid und andere Sachen… Flugscheiben Virmanas und dergleichen mehr."
-    , "Woher die Reptos kommen ist mir auch bekannt."
-    , "Die Reptos auch, die haben sich nur unterirdisch verlagert durch den Einschlag."
-    , "In der Kruste! Nicht die innere Hohlwelt! Das ist ein großer Unterschied!"
-    , "Reste vom atlantischen Empire – das atlantische Imperium."
-    , "Wer von euch kennt die theosophische Lehre?"
-    , "Kontinent Mu – die Südhemisphäre."
-    , "Wir sind die nächste 4,5 Rasse, ne… die arische."
-    , "Nech, die Blawatzki… die Blawatski spricht ja von Wurzelrasse."
-    , "Dann folgt nach der Polarrasse, die hyperboreische Rasse, auch auf die Nordhemisphäre beschränkt."
-    , "Dann, (…) die haben mit uns Ähnlichkeit, die lemurische Rasse."
-    , "Nach der lemurischen Rasse, folgte das atlantische Imperium."
-    , "Demnach ist die weiße Rasse, also sprich atlantische Imperium, eine Kolonie, eine aldebaranische Kolonie."
-    , "Was jeder Erdenbürger wissen sollte!"
-    , "Woher sollen die Rassen, Negroid und Asiatit herkommen oder Isaac Krummburg?!"
-    , "Die ursprünglichen Wesenheiten waren die Reptos, die ich persönlich sehr mag."
-    , "Verbotene Archäologie, das sind insgesamt drei Teile."
-    , "In sekundenschnelle zu anderen Fixsternen."
-    , "Gedanken sind infometrische Felder."
-    , "Ja, das ist freie Energie."
-    , "Zigfache Überlichtgeschwindigkeit - ganz wichtig."
-    , "Denn die Erde ist ein lebender Organismus, vergesst das nicht."
-    , "Sie wirken auf der Atomebene, nicht auf der Molekularebene - ganz wichtig."
-    , "Damit haben Sie die Eigenschaft die Zeit der Zellen quasi zurückzudrehen."
-    , "Man steckt erst richtig drin, wenn man auch der letzten Klofrau erklären kann, was Zeitreisen sind."
-    , "Levitation! Mein Gott, die indischen Gurus machen uns das vor."
-    , "Man kann mit Skalarwellen experimentiern."
-    , "Macht es subsersiv, geht damit nicht an die Öffentlichkeit, schon garnicht ins Internet."
-    , "Informetrisches Feld und informetrische Felder, Pluralis."
-    , "Das ist nämlich das A und O des Universums."
-    , "Wir sprechen von infometrischen Feldern."
-    , "Skalarwellen oder Teslawellen sind eigentlich Wellen des Raum-Zeit-Kontinuums."
-    , "Dort einzudringen würde ich nicht empfehlen! Nirgendwo!"
-    , "Die Erdkruste ist ja weltweit ein Gangsystem."
-    , "Dort leben ja mehrere Zivilisationen, nicht nur eine. Ich hab Karten darüber."
-    , "Eine Million Reichsdeutsche leben dort unten, in der inneren Hohlwelt."
-    , "Dort einzudringen würde ich nicht empfehelen! Nirgendwo!"
-    , "Die altindischen Vimanas! Vimanas heißt Fluggerät Sanskrit, flogen mit Quecksilberwirbelmotoren."
-    , "Ich erinnere noch einmal daran, dass mindestens rund eine Million reichsdeutscher Patente in alliierte Hände verschwand!"
-    , "Apropos unterirdische Bauwerke: Das Verhältnis von oberirdisch zu unterirdisch ist 1 zu 4!"
-    , "Gesamtberlin, wissen auch die wenigsten: 4 mal mehr - Unterdirdisch! Alles verzweigt!"
-    , "Das kann nur die Dritte Macht gewesen sein."
-    , "Bayern ist ein Schlüsselpunkt!"
-    , "Daher die vielen Rassen, die unmöglich alle von dieser Erde stammen können."
-    , "Anschliessend wurde die Erde als Strafkolonie genutzt."
-    , "Unser Universum ist ja ein Perpetuum Mobile."
-    , "Die Geheimbasen des Deutschen Reichs haben auch den Wiederaufbau Westdeutschlands organisiert."
-    , "Ich sage nur Bipolarität des Universums."
-    , "Was macht die Sonne uns vor, Implosion."
-    , "Die Sonne ist kalt!"
-    , "Die Erde ist ja hohl."
-    , "Das ist keine mongolische Mikroelektronik sondern deutsche Hochtechnologie!"
-    , "Ich kann mich in sekundenschnelle mit anderen Sternensystemen, Galaxien informieren."
-    , "Das nächste Treffen findet an Führers Geburtstag statt."
-    , "Und die sind zum Pluto, dem erdfernsten Planeten gestartet."
-    , "Übrigens, meine Energiegruppe hat auch Kontakt zur Dritten Macht."
-    , "Um in die innere Hohlwelt zu gelangen, muss ich 4000 KM Gesteinsmaterial überwinden."
-    , "Hatten wir auch schon im 3. Reich."
-    , "Ein versteckter Hinweis, dass der Mond in reichsdeutscher Hand nämlich ist."
-    , "96 Flugzeuge * 60 Minuten * 14 Stunden * 40 Passagiere."
-    , "Während des dritten Reiches war Nicola Tesla hier zu Besuch."
-    , "Schwarze Sonne, bekannt!"
-    , "Ich nehme auch an, dass da auch das galaktische Imperium Aldebaran eine wesentliche Rolle spielt."
-    , "Wir dürfen nicht mit irdischen Maßnahmen herangehen Leute, vergesst das nicht!"
-    , "Eine Art Monarchie oder weiß der Geier was."
-    , "Nagelneue Flugscheiben."
-    , "Flugscheibenkonstrukteur!"
-    , "Deutsche Raumfahrt ab 1934."
-    , "Das hier ist nichts anderes als ein Strafplanet."
-    , "Wie kämpfen Reichsdeutsche?"
-    , "Grüße aus der 9. Milchstraße."
-    , "Es gibt eine Art galaktischer Konföderation in unserer Galaxis."
-    , "Die hatten mehr Verluste als in Pearl Harbour, hihi."
-    , "Eine ganz ekelhafte Waffe."
-    , "Liegt im Krankenhaus, ich nehm an, dass sie ihn da mit Mikrowelle traktiert haben."
-    , "Strahlenwaffen.. ist schon intelligenter, Mikrowelle, Skalarwelle."
-    , "Wenn ich jetzt an Yellowstonepark denke, kann bald passieren, herrlich! Ich liebe ja Katastrophen."
-    , "Ich finde Erdbeben schön."
-    , "Wenn sich Risse auftun, ganze PKWs versinken, hehe – herrlich!"
-    , "Was richtet Luft an? Tornados!"
-    , "Was ist denn da wieder los? Wo ist meine Panzerfaust?"
-    , "Zerlegen macht Spaß!"
-    , "Internet ist ne schöne Waffe."
-    , "Jetzt kommen wir zur Wetterbeeinflussung und -kriegsführung durch Skalarwellen."
-    , "Ein Kamerad von mir musste da sein Leben lassen."
-    , "Tödliche Organwellen."
-    , "In Russland nennt man das heute die skalara Haubitze."
-    , "Die sehr gefährliche amerikanische Lanzenviper (…) und der Mensch stirbt elendig innerhalb von 20 Minuten."
-    , "Mögen sie in ihrem eigenen Blut erSAUFEN!"
-    , "Irgendwann ist Schluss mit lustig!"
-    , "So schön Waffen sind - es hat keine Sinn, Gewalt mit Gewalt zu begegnen."
-    , "Übrigens, Spannung… Millionen von Volt - um das mal zu verdeutlichen!"
-    , "Die knallen durch!"
-    , "Die sind den Amis um mehrere Nasenlängen voraus."
-    , "Und dann Himmel, Arsch und Zwirn!"
-    , "Die Russen verfügen über Monsterbomben."
-    , "Viele Ökosysteme spielen heute schon verrückt."
-    , "Die werden erhitzt und gehen kaputt."
-    , "Nun wisst ihr auch, wie man künstlich Erdbeben auslöst."
-    , "Solche seltenen Wetter-Skalar-Interferometer könnten Kugelblitze produzieren."
-    , "Haarp-Projekt Alaska und anderes lässt grüßen."
-    , "WAFFENSYSTEME! Da wirds interessant!"
-    , "Ich weiß auch, wie man sowas bauen kann - Mikrowellenterror und dergleichen mehr."
-    , "Bis auf 200 Meter tief und mehr werden alle Hohlräume ausradiert."
-    , "Knüppel aus dem Sack!"
-    , "Ich liebe Katastrophen!"
-    , "Da brauche ich keine Nuklearwaffen - nichtmal Mikrowelle."
-    , "Oder ich lass die Fackelmänner los!"
-    , "Ich lache über Naturkatastrophen, die ich liebe!"
-    , "Vulkanausbrüche - was Schönes!"
-    , "Todesstrahlen, Todesstrahlen!"
-    , "Nuklear oder nicht-nuklear ist egal. Hauptsache alles ist zerstört."
-    , "Es hat überhaupt keinen Sinn - der Tod überrascht Jeden!"
-    , "Zisch - Aus, weg war det - ein schöner Tod."
-    , "Von wegen das Märchen über die desolate russische Armee - da kann ich nur lachen!"
-    , "Das sind natürlich dann schon fast Superbomben."
-    , "Nuklearbomben sind Flöhe dagegen."
-    , "Das sind einzigartige militärische Anwendungen."
-    , "Heute werden wir über HAARP, sprich Wetterkriegsführung sprechen."
-    , "Die Sowjets gackern nicht bevor das Ei gelegt ist."
-    , "Man kann davon ausgehen, dass in jedem Neubaublock einer mit Mikrowelle experimentiert."
-    , "Gegen Skalarwellen haben sie die Arschkarte - also die goldene."
-    , "Mit Mikrowelle runterholen!"
-    , "Nach Möglichkeit mit wenig Blutvergiessen, vergesst das bitte nicht!"
-    , "Dabei denke ich an die Allee der Gehenkten."
-    , "Ich kann aber auch, im Rahmen der Wetterkriegsführung Tornados künstlich erzeugen."
-    , "Den Leuten wird speiübel, die fallen um."
-    , "Man nennt das eine so genannte skalare Haubitze!"
-    , "Mikrowellenstrahler!"
-    , "Ist das bekannt HAARP, Alaska, Wetterkriegführung?"
-    , "Da bleibt von den Plattenbauten auch nichts mehr."
-    , "Ne schöne Waffe, sollte man mal gegen die Loveparade einsetzen."
-    , "Fußball… Gotteswillen - Opium fürs Volk saggich nur. Brot und Spiele. Iss was für Bekloppte."
-    , "Letztlich war er aber nur eine zweibeinige Ertragsmaschine – man muss das mal so knallhart sagen."
-    , "Die Wende war nicht plötzlich, die wurde schon von den Zionisten 1899 geplant – von den Illuminaten."
-    , "Westliche Wertegemeinschaft und Demokratie sind auch aus meinem Wortschatz GE-STRI-CHEN!"
-    , "Das wird ja an den Schulen nicht mehr gelehrt."
-    , "Eine gewöhnliche DILLGURKE – habter das gehört!"
-    , "Viele Frauen, die machen da Channeling und da kommt nur elektro-magnetischer Müll herüber."
-    , "Die sind sehr empfänglich für Müll."
-    , "Wird natürlich totgeschwiegen."
-    , "Fußball… Gotteswillen - Opium fürs Volk saggich nur. Brot und Spiele. Iss was für Bekloppte."
-    , "Das deutsche Volk verblödet – da gibt es ein Buch im Kopp-Verlag glaubich."
-    , "Unterstes wird zu Oberstes gekehrt."
-    , "Denken Sie zum Beispiel an die pervertierten Loveparade-Diskotheken und vieles mehr."
-    , "Ja was sind denn das? Das sind Umschlagplätze für Drogen, Waffenhandel und Rotlicht-Milieu, mehr ist das nicht."
-    , "Darauf setze ich einen Haufen."
-    , "Wer die Lüge kennt und trotzdem nichts unternimmt, macht sich mitschuldig."
-    , "Alles andere… Schrott!"
-    , "Wir werden verfolgt, vernichtet – von Isaak Krummbold."
-    , "Es gibt noch andere bösartige Elemente, subversive Elemente – Volksschädlinge!"
-    , "Und der wurde vom Finanzjudentum auch nur ausgenutzt."
-    , "Dafür musste er sterben."
-    , "Nach dem Motto: Was nicht sein darf, nicht sein kann."
-    , "Sie können alles was gelehrt wird zu 90% vergessen, noch… noch mehr!"
-    , "Besser ist immer der persönliche Kontakt, statt da den Elektrojuden zu nutzen."
-    , "Internet ist so viel Schrott"
-    , "Naja.. bescheuert."
-    , "Ja aus’n Negern! (…) Aus Schwarz wird nicht weiß!"
-    , "Die ganzen Darwinismus-Lügen.. vergesst es!"
-    , "Welch ein geistiger Dünnschiss saggich da nur!"
-    , "Was wird heute gelernt an den Schulen? Schrott! Müll!"
-    , "Eins ist aber jeden Fall ist Fakt, dass gewisse Kräfte versuchen die Rechte Szene (…) auseinanderzuplautzen."
-    , "Bei Freimaurern, Illuminaten sagen wir mal (…) hat das alles eine Bedeutung."
-    , "Man kann hinkommen, wo man will - alles Mist!"
-    , "Wenn man einmal in den Fängen der Ärzte ist, dann hat man verloren."
-    , "Überall hat man dann die goldene Arschkarte."
-    , "Schmeiß das aus dem Fenster!"
-    , "Energielobby, da ham was wieder, hähä!"
-    , "Wer GEZ zahlt ist selber dämlich."
-    , "Geht mal ins Internet, Google-Suchmaschine, und gebt den Begriff Skalarwellen ein."
-    , "Was machst du denn da wieder fürn Ödeldödel?!"
-    , "Das wäre ja dann wie bei der GEZ."
-    , "Die würden bei mir alle in Physik die Note 100 kriegen."
-    , "Was an der Schule natürlich nicht gelehrt wird und an den Universitäten auch nicht."
-    , "Da kann der dämliche Ami nur träumen!"
-    , "Die armen Kinder, was aus denen werden soll - ja Mutanten, da hab ich auch kein Mitleid mehr!"
-    , "Bazillus Dummheit sag ich nur."
-    , "Wisst Ihr eigentlich, wie die Dekadenz programmiert ist?"
-    , "Es funktioniert ja immer wieder - es gibt ja genug Verblödete."
-    , "Wir leben in einer virtuellen Scheinwelt."
-    , "Peverse Gehirne sind das, die sich sowas ausdenken!"
-    , "Ein dummes Volk lässt sich leichter beherrschen."
-    , "Facebook, das ist alles was für Psychopathen meiner Meinung nach."
-    , "Dissonanzen! Eine Dissonanz jagt die andere!"
-    , "Genau das haben die meisten nicht begriffen. Na ja, was soll man von Mutanten erwarten?"
-    , "Eine Welt voller Mutanten und Zombies mit einem IQ geringer als eine Dillgurke."
-    , "Sie müssen schon Ihren Kopf jetzt zum Denken benutzen und nicht als Hutständer!"
-    , "Wir werden ja heute von Hacke bis Nacke belogen."
-    , "Für mich ist das der Elektro-Jude."
-    , "Das sind kranke Gehirne, aber es ist so."
-    , "Scheiße gesellt sich zu scheiße!"
-    , "Und da braucht man sich nicht zu wundern, über die vielen Mutanten, die rumlaufen."
-    , "Das sind Schmutzfinkjournalisten, die gehören an den Galgen."
-    , "Es rollen sich mir die Fussnägel auf, wenn ich ins Internet gehe und gucke unter Skalarwelle."
-    , "Mindcontrol, Bewusstseinskontrolle, versklavte Gehirne und so weiter und so fort."
-    , "Nur Dreck, Nur Dreck, und der Bürger sieht sich das an!"
-    , "Unsinnige Talkshows, wenn ich das schon sehe - Uääääh!"
-    , "Kraftlose Schwätzer, die werden untergehen."
-    , "Die doofen Amis, die trauen sich da nicht ran, ist doch klar."
-    , "Handy an die Wand schmeissen, weg damit!"
-    , "Wenn ich meine bisheriges Leben betrachte, dann stelle ich fest, dass es Höhen und Tiefen gab."
-    , "Ich muss auch dazu sagen, ich bin auch Sternbild Skorpion – da gibt es keine Grauzonen, nur Schwarz oder Weiß."
-    , "Mein nächstes Buch ist auch schon fertig: Die schwarze Macht."
-    , "Eine Zeit meiner Sammlertätigkeit begann."
-    , "Ich hab auch nur für die Fächer was getan, die mich interessiert haben – gab dann nur Einsen oder Dreien."
-    , "Ab meinem 14 Lebensjahr verfügte ich bereits über eine beachtliche geologische und gestaltete an Schulen entsprechende Ausstellungen, welche eine hohe Resonanz hatten."
-    , "Seit meinem 15. Lebensjahr wohnte ich in der Reichshauptstadt Berlin."
-    , "Sämtliche Naturwissenschaften Eins, wie sich das gehört."
-    , "Während dieser Zeit besuchte ich zwei Jahre lang die Abendschule, 11. und 12. Klasse, so mal nebenbei."
-    , "Das hab ich extern so neben… aus dem Ärmel gemacht."
-    , "Da bin ich übrigens auch Mitglied, Prä-Astronautik- Äntschiens Äh… Ästronaut Society, mit Urkunde (…) und leitete die Uranier-Gruppe Astrophysik."
-    , "Mein Kampf gegen die Lügen der Alliierten – das war der Grundstein."
-    , "Dort war ich kein geringer als Hauptstrahlenschutzbeauftragter für die gesamte ehemalige DDR."
-    , "Die ABC-Waffen gingen alle durch meine Hand, also Massenvernichtungswaffen."
-    , "Finanzdienstleistungen – alles son Schnullifax, da weiß ich, wie die Verbrecher arbeiten."
-    , "Kurz nach der Wende gründete ich die Fachgruppe Rätsel der Erdgeschichte, die sich auch mit Physik und Paläoastronautik beschäftigte."
-    , "Eines Tages bekam ich in diesem Zusammenhang Kontakt zum Templerorden, wo ich heute leitend tätig bin."
-    , "Durch jenen Verlag, und das ist jetzt ganz wichtig, gelangte ich an Schriften und Videos zum Thema Reichsdeutsche Hochtechnologie."
-    , "Ich muss nur dazu sagen, in Naturwissenschaften kenne ich mich überall sehr gut aus, da macht mir so schnell keiner was vor."
-    , "Sprache beherrsche ich – mehrere Fremdsprachen, ist für mich aber nur Mittel zum Zweck."
-    , "Sportarten guck ich nur das, die ich selbst betrieben habe, bis zur Meisterschaft: Schach, Fechten, Degen, Florett, Schwert, Schießen und Military-Reiten, alles andere kann mich keiner hinterm Ofen vorlocken."
-    , "Im erstgenannten Buch, Hochtechnologie im Dritten Reich, habe ich nicht nur physikalisch, mathematisch reichsdeutsche Technologien beschrieben, sondern räumte auch die hörigen alliierten Lügen gegen das Deutsche Reich auf."
-    , "Angst und Unmöglichkeit sind aus meinem Wortschatz gestrichen."
-    , "So lange ich lebe wird mein Kampf gegen die Alliierten anhalten."
-    , "Napoleon Bonaparte ist auch eines meine Vorbilder, militärisch."
-    , "Mich wundert… kann nix mehr erschüttern."
-    , "Ich denke ja ganzheitlich vernetzt, nicht wahr!?"
-    , "Ich habe so viel Chaoten in letzter Zeit kennen gelernt, also… Schade um die Zeit, da hätte ich schon hundert Differentialgleichungen lösen können."
-    , "Namen sind für mich Schall und Rauch, für mich sind Zahlen wesentlich."
-    , "Ich selber bin die graue Eminenz."
-    , "Gerichte und Polizei sind für mich Fremdwörter."
-    , "Ich hab den Schutz der Dritten Macht!"
-    , "Ich genieße den Templerschutz und den Schutz der National Security Eygenzi."
-    , "Bei mir in der Energiegruppe, die Leute, die nicht in der Lage sind ein einfaches Integral zu lösen, die schmeiße ich gnadenlos schon raus."
-    , "Wenn andere die Fenster putzen (…), da löse ich partielle Differentialgleichungen."
-    , "Wenn man den Algorithmus erkannt hat, und ich hab ihn erkannt, erspare ich mir zehntausende Seiten zu lesen."
-    , "Ich kann Zeit beschleunigen, ich kann Zeit aber auch verlangsamen."
-    , "Ich halt es mit Napoleons Worten: Angst und Unmöglichkeit sind aus meinem Wortschatz gestrichen!"
-    , "Wir sind die Top-Ten, auf der ganzen Erde."
-    , "Wer kann das, außer mir?"
-    , "Das hole ich locker wieder rein mit meinen Schriften."
-    , "Ich beherrsche die englische Sprache in Wort, Bild und Schrift."
-    , "Aus tausend Seiten mach ich euch eine."
-    , "Man sollte sich mit Putin gut stellen - Ich kenne ihn übrigens persönlich, komme mit ihm gut klar."
-    , "Die Meisten begreifen es leider nicht, darauf kann ich natürlich keine Rücksicht nehmen."
-    , "Auch nachzulesen in meinem Bestseller-Buch."
-    , "Nicht umsonst ist ja eines meiner Bücher ein Bestseller."
-    , "Ich sitze auf der Spitze der Pryramide."
-    , "Was da an Mimikry ausgeübt wird (…) das was ja im Tierreich bekannt."
-    , "Im Indo-Pazifik kann man sie lebend finden."
-    , "Wer kennt Mastodon?"
-    , "Trilobiten Dreilapp-Krebse, offiziell ausgestorben, hahahaha!"
-    , "Ah.. die fette Kuh erhebt sich.. sehr schön. Na iss doch wahr."
-    , "Viehzeug muss gepudert werden!"
-    , "Wenn man seine Katze in den Mikrowellenherd zum Trocknen reinschiebt sieht man die Wirkung am Besten."
-    , "Das arme Tier, naja gut - was solls?"
-    , "Täglich sterben tausende von Tierarten aus."
-    , "Was bedeutete die Wende für mich? Zunächst einmal nur Nachteile."
-    , "Zu viel Flüssigkeit.. der Regen, der reicht schon."
-    , "Wasser ist Gift!"
-    , "Sonst krieg ich quadratische Augen!"
-    , "Ich selber bin ein stinkenfauler Mensch was körperliche Arbeit angeht."
-    , "Was ist denn das für Musik?"
-    , "Ich bin ein Mensch, wenn ich schon Schnee sehe, kriege ich ’ne Erkaeltung."
-    , "Ich hasse Schnee, ist was fuer dumme Bauern."
-    , "Meine Temperaturen sind 40 Grad plus und 100% Luftfeuchtigkeit."
-    , "Alles was unter 20 Grad ist, ist fuer mich Frost."
-    , "Die Tür schon wieder!"
-    , "Da komme ich mir vor wie eine tibetanische Gebetsmuehle oder tausend Studenten."
-    , "Die Tür, ja was ist denn das?"
-    , "Wie sagte noch Napoleon:"
-    , "Es gibt keine Zufälle."
-    , "Meine Meinung – dazu stehe ich!"
-    , "Spaß muss sein, Leute!"
-    , "Ich fürchte, wir müssen völlig umdenken!"
-    , "Dann haste die diamantene Arschkarte."
-    , "Wir leben in einer sehr interessanten Zeit."
-    , "Wir sind nicht umsonst hier hineininkarniert oder hineingeboren."
-    , "Damit danke ich für die Aufmerksamkeit."
-    , "Das ist wieder ne Sache für sich."
-    , "Aber man latscht nur einmal auf die Harke."
-    , "Jetzt kommen wir zum Schluss der heutigen Lektion."
-    , "Man kann nicht auf allen Hochzeiten tanzen."
-    , "Alles vermeidbare Risiken!"
-    , "Deshalb müssen wir sie mit aufklären."
-    , "Es gibt dort ne Menge Häkchen und Ösen – man kann geteilter Meinung sein."
-    , "Die Meinungen divergieren sehr sehr stark."
-    , "Da muss man natürlich die Kräfte erkennen."
-    , "Ruhe da hinten!"
-    , "Muss auch militärische Ordnung herrschen!"
-    , "Haltet euch fest!"
-    , "Hähä!"
-    , "Ein Wahnsinn ja."
-    , "Muss ich noch deutlicher werden? Ich glaube nicht!"
-    , "Das muss man begreifen, ist ja wirklich leicht."
-    , "Wer das begreift, der weiß schon sehr viel."
-    , "Das ist wichtig zu wissen."
-    , "Das ist jetzt das, was Sie sich merken sollten."
-    , "Nichts einfacher als das."
-    , "Repetitio est mater studiorum!"
-    , "Ich halte mich auch kurz, denn in der Kürze liegt die Würze."
-    , "Man muss schon wirklich zwischen Dichtung und Wahrheit differenzieren können!"
-    , "Für die Nichtwissenden mag das wie Glockengeläut in den Ohren klingen."
-    , "Das erfordert natürlich etwas Gehirnschmalz."
-    , "Nichts ist unglaublicher als die Wahrheit."
-    , "Spass muss sein."
-    , "Zack, einfach ist das."
-    , "Kein Problem!"
-    , "Da staunt ihr, was?"
-    , "Mein Gott!"
-    , "Da haben wirs mit einem Satz!"
-    , "So muss das sein!"
-    , "Ja, Heil!"
-    , "Ein zweischeidiges Schwert,ne?"
-    , "Die Zusammenhänge sind glasklar!"
-    , "Muss man schon dann kümmern, wenn man dran kommen will!"
-    , "Klar?!"
-    , "Muss mann wissen!"
-    , "Vergessen Sie’s!"
-    , "Bekannt ja?"
-    , "Alles andere ist unnötig."
-    , "Wer weiß das? Wieder keiner!"
-    , "Sehr Gut!"
-    , "Klar, ne?!"
-    , "Silentium!"
-    , "Gibt es. darf man nicht außer Acht lassen."
-    , "So einfach ist das, muss man nur wissen."
-    , "So einfach ist das."
-    , "Es gibt keine Zufälle!"
-    , "Da werden Sie staunen!"
-    , "Muss man natürlich wissen."
-    , "Wissen auch die Wenigsten."
-    , "Gibt’s interessante Fachliteratur."
-    , "Ruhe!"
-    , "Alle 100 Jahre findet ein großer Illuminati-Kongress statt, da werden die Ziele für die nächsten 100 Jahre gesteckt, auch der Euro."
-    , "Darf er nicht drüber erzählen, sonst würde er kein Geld mehr bekommen für seine kostspieligen Reisen."
-    , "Aus Sicherheitsgründen habe ich keine andere Namen außer meinem genannt – nach dem Motto:"
-    , "Das kommt ja erst nächstes mal, da muss man das Gehirn schon arbeiten lassen."
-    , "Aber ich schätze mal, wir stehen kurz vor einem Wendepunkt."
-    , "Ja.. summ summ summ."
-    , "Der war sehr gut."
-    , "Konfuzius, das ist der Status Quo."
-    , "Mindestens sind das reine Vegetarier, was mir schon sympathisch ist."
-    , "Wie heißt er? Peter Fitzek? Hab ich kennen gelernt da.. da schließt sich der Kreis!"
-    , "Peter Fitzek (…), der kennt wieder die Leute meiner Energiegruppen."
-    , "Ich beobachte die Szene aber weiter."
-    , "Das ist wie mit der Drehscheibe, man lernt Leute kennen – hochinteressant muss ich sagen!"
-    , "Such is life."
-    , "Wir machen’s wie mit der Schiebewurst - das Beste immer zum Schluss."
-    , "Er war auch in den Vereinigten Emiraten, bloß da hat man ihn auch nur betrogen, beschissen."
-    , "Ich habs gesehen Fata Morgana, Namib Wüste."
-    , "Denn Hunger und Durst macht böse."
-    , "Übrigens gibt es kein Gut und kein Böse in dem Sinne."
-    , "Zuerst probiert man dekadente Musik in Sydney, Australien aus."
-    , "Ähnliches ist ja auch in Deutschland geplant, Vorsicht!"
-    , "Am besten einen Stiefel Whisky trinken."
-    , "Mit Dynamit beginnt man den Tag dynamisch!"
-    , "Arme und Beine bilden eine rotierende Scheibe, die Ohren flattern im Wind und das Arschloch bildet den höchsten Punkt."
-    , "Wie mein Templerbruder vom Altorden Norbert Jürgen-Ratthofer zu sagen pflegte."
-    , "Wisst Ihr was das heißt? Eine Million Jahre?"
-    , "Es gibt ein Prag - in Bayern."
-    , "Das Wort Zufall ist aus meinem Wortschatz gestrichen."
-    , "Die lachen uns aus!"
-    , "Und zur Not hilft eben ein Marsch. Fußmarsch, Wolfsangelmarsch."
-    , "Das ist geheimes Templerwissen."
-    , "Anschließend machen wir ’ne Raucherpause."
-    , "Na, wer hat Warsteiner bestellt?"
-    , "Die kann man erwerben gegen 2 Euro."
-    , "Es kommen gigantische Umwälzungen auf uns."
-    , "Die Inselaffen hasse ich sowieso!"
-    , "Rotwein ist gesund - Templerwein!"
-    , "Das ist auch gegen Krebs und alles mögliche."
-    , "Alles ist vorhersehbar!"
-    , "3 mal Storgram reinen Alkohol!"
-    , "Das schirmt gegen radioaktive Strahlung ab."
-    , "Irrtum! Gezielte Desinformation!"
-    , "Mathematik mein lieber {target}, hö?!"
-    , "Dich meine ich {target}, nicht einschlafen!"
-    , "Für die Templermitglieder, {target}? Nächsten Sonnabend, Roseneck – ab 18:00 Uhr, weisse bescheid?"
-    , "Du erinnerst dich, {target}!?"
-    , "Ja du lachst, {target}… sieh ins zionistische Protokoll!"
-    , "Hat noch jemand einen Beitrag zu liefern, {target}?"
-    , "Wer hat hier Bier, {target}?"
-    , "{target} kommt - vom Klo, aber er kommt."
-    , "Negativmagnetismus, was ist das denn wieder, {target}?"
-    , "{target} du beschäftigst dich damit hoffentlich (…) - du, ich frag Dir das ab sonst."
-    , "Richtig {target} - siehste {target} denkt mit, das gefällt mir an dir!"
-    , "Auch für dich wichtig, {target} - für deine Experimente."
-    , "Absichtlich, richtig {target}!"
-    , "{target}, denk auch an Chemtrails!"
-    , "Altmeister {target}, in Front vor mir sitzend."
-    , "{target} los, schreib das auf!"
-    , "Ja {target}! Da ist was im Busch!"
-    , "{target}! Das betrifft auch dich!"
+stollQuotes :: L.Text -> [L.Text]
+stollQuotes target =
+    [ $(isL "Ist ne stehende Welle, junge Dame.")
+    , $(isL "Licht ist keine Grenzgeschwindigkeit, vorsicht. Skalarwellen und stehende Welle hat ein vielfaches mehr.")
+    , $(isL "Auf die Maßeinheiten der Kernphysik hab ich bewusst verzichtet, denn außer mir würde das kaum jemand begreifen.")
+    , $(isL "Das ist ein ganz einfacher Algorithmus.")
+    , $(isL "Primzahlen bis 1024 werden in der Computertechnik benutzt.")
+    , $(isL "Darwin, Jude… klar. Da wurde die Biologie versaut – Einstein, Jude… die Physik wurde versaut, so kann ich das ganze Gebäude durchgehen.")
+    , $(isL "Das hat auch die Blawatzki erkannt.")
+    , $(isL "Die Wurzel aus -1 ist lösbar.")
+    , $(isL "Wurzelrechnung… lächerlich.")
+    , $(isL "Geht in eine kalte Fusion.")
+    , $(isL "Die Erde ist ein lebender Organismus.")
+    , $(isL "Es gibt einen energetischen Frühling.")
+    , $(isL "Es gibt auch keine Missing Links. (…) Alles ein Schwachsinn!")
+    , $(isL "Wir haben mit Braunsgas gearbeitet.")
+    , $(isL "Wir haben Blei verwandelt in Gold und Silber, Platin.")
+    , $(isL "Physik – 2/3 schrott.")
+    , $(isL "Ich bin auch ein Anhänger der Kataklysmen-Theorie.")
+    , $(isL "Es gibt Evolution heißt AUS-wicklung, alles schon da gewesen.")
+    , $(isL "Klaus Böhme, das ist derjenige, der hocheffiziente BHKWs (…) baut, mittels Braunsgas, also kalte Fusion.")
+    , $(isL "Im Gegensatz zur Involution – EIN-wicklung. Ha! Physik, Physik… hä!")
+    , $(isL "Es handelt sich demnach um einen deutlichen und jederzeit reproduzierbaren Beweis für Homöopathie.")
+    , $(isL "Die Zahl 12 - auch ne kosmische Zahl.")
+    , $(isL "Angewandte MaTHEMAtik!")
+    , $(isL "Quarz als Skalarwelleninterferometer.")
+    , $(isL "Auch ne kosmische Zahl.")
+    , $(isL "Aber Vorsicht bei der Numerologie!")
+    , $(isL "Merkt ihr die Korrelation? Nachdenken!")
+    , $(isL "Man muss das dazu auch mal philosophisch betrachten.")
+    , $(isL "Aber steigtert euch nicht zu tief hinein - ich denke da an die Zahl 23 und was es alles gibt.")
+    , $(isL "Es gibt auch nen Vier-dimensionalen Würfel.")
+    , $(isL "Vier-dimensionale Räume, gibt es!")
+    , $(isL "Skalarwellen knallen quer Kontinente und Ozeane.")
+    , $(isL "Die jetzige elektromagnetische Theorie, wie sie an Schulen und Universitäten vertreten wird, ist falsch.")
+    , $(isL "Mit Überlichtgeschwindigkeit, ich betone: ÜBERLICHTGESCHWINDIGKEIT!")
+    , $(isL "Das ist ausgestoßene, überschüssige Geschwindigkeit! Mehr ist das nicht Leute!")
+    , $(isL "Wer kennt die Maxwell’schen Gleichungen?")
+    , $(isL "Was sind die Pyramiden, wer weiß das? Schlüssel der Energie!")
+    , $(isL "Magnetohydrodynamik!")
+    , $(isL "Wir leben in einer Welt von Schwingungen, sprich Frequenzen, und damit korrelierender Wirbelmechanismen.")
+    , $(isL "Alles ist nur Bewegung oder Geschwindigkeit oder Schwingung.")
+    , $(isL "Mt diesem Braungas haben wir auch Elementtransmutationen vollbracht, allerdings machen wir das jetzt eleganter, mit einer Art Kaltlaser.")
+    , $(isL "Das ist eine Aufkraft!")
+    , $(isL "Weisste was die Primzahlen bedeuten? Einen Torus - raum-zeitlich gesehen.")
+    , $(isL "Alles nur störende Mikrowellen.")
+    , $(isL "Das A&O in der freien - in der Physik.")
+    , $(isL "Gemeint ist das organische Germanium 32.")
+    , $(isL "Unsere Energiegruppe ist in der Lage das künstlich herzustellen.")
+    , $(isL "Mikrowelle, Skalarwelle!")
+    , $(isL "Physik, Mathematik, Philosophie.")
+    , $(isL "Wir Physiker sprechen vom sogenannten Dirac-Meer.")
+    , $(isL "Die muss man anzapfen entsprechend einem Implusions-Strudel.")
+    , $(isL "Sie ist ein Perpetuum Mobile!")
+    , $(isL "Das heißt eine logarithmische Spirale raum-zeitlich betrachtet nach Innen.")
+    , $(isL "Das ist die menschliche Zelle im Schnitt!")
+    , $(isL "Das nennt man KALTE FUSION!")
+    , $(isL "Es gibt nur Expansionsstrudel und Implosionsstrudel.")
+    , $(isL "Mikrowelle, Skalarwelle!")
+    , $(isL "Es gibt keine feste Materie - das ist ein Trugschluss.")
+    , $(isL "Mann muss immer den Ursprung erkennen - den Algorithmus, meine Damen, meine Herren.")
+    , $(isL "Die Natur bracht Wirbel.")
+    , $(isL "Formeln sind viel besser zu Handhaben, ist wie ein Krimi.")
+    , $(isL "Mathematik ist die Sprache des Universums, der Intelligenz und erspart mir 1000 Seiten zu lesen.")
+    , $(isL "Man steckt erst richtig drin im Wissen, wenn man auch einer Klofrau das Raum/Zeit-Gefüge erklären kann.")
+    , $(isL "Das ist eine stehende Welle, die ist sofort da.")
+    , $(isL "Der Mensch ist eine energetische Matrix!")
+    , $(isL "Magie ist Physik durch wollen!")
+    , $(isL "Meine Name ist Stoll, ich bin promovierter Naturwissenschaftler.")
+    , $(isL "Ich befasse mich mit freier Energie.")
+    , $(isL "Implosionstechnik!")
+    , $(isL "Biologie ist Physik.")
+    , $(isL "Mit Kraft!")
+    , $(isL "Das ist kein Science Fiction!")
+    , $(isL "So einfach ist das, wenn man um die neue Physik weiß!")
+    , $(isL "Ich kann auch radioaktive Strahlung neutralisieren!")
+    , $(isL "So lebt man ruhiger und energetischer.")
+    , $(isL "Es gibt nur energetische Felder.")
+    , $(isL "Das hatte die deutsche Luftwaffe (…) rechtzeitig erkannt.")
+    , $(isL "Ganz wichtig, steht auch auf den reichsdeutschen Wissen.")
+    , $(isL "So sind Höhen ohne Tiefen nicht denkbar – siehe hermetisches Gesetz des Universums.")
+    , $(isL "Entscheidend ist die Länge des Frauenhaares als Sender und Empfänger.")
+    , $(isL "Aber das Frauenhaar, das müssen Sie begreifen, ist magnetisch, das hat ein anderes Magnetfeld.")
+    , $(isL "Ich denke an die Vril-Damen – transmediale Kontakte zum Aldebaran.")
+    , $(isL "Wir hatten den ersten Videorekorder der Welt.")
+    , $(isL "Die schwarze Macht – da geht es um Templerwissen und um das Deutsche Reich.")
+    , $(isL "Wir hatten die erste Polaroid-Kamera – allerdings S/W-Aufnahmen.")
+    , $(isL "Wir hatten Bildtelefon. Da konnte man zu bestimmten Städten telefonieren und sah sein Gegenüber – für 50 Reichspfennige.")
+    , $(isL "Kann man ablesen, siehe Victor Schauberger.")
+    , $(isL "Prä-Astronautik macht der.")
+    , $(isL "Bis auf die Haunebu I, die war nur zu 60% Weltall-tauglich, nebenbei bemerkt.")
+    , $(isL "Flugscheiben mit non-konventionellen Antrieben, Elektrogravitation und Gravitationsabschirmung und Überlichteffekt.")
+    , $(isL "Wissenschaftlich, technologisch war das Deutsche Reich den Alliierten um mindestens 100 Jahre voraus, (…) moralisch um 1.000 Jahre voraus.")
+    , $(isL "Wir haben versucht Quetschmetall aus den Vril-Werkstätten zum schmelzen zu bringen.")
+    , $(isL "Quetschmetall auch wurde verwendet für Plasma-Antrieben von reichsdeutschen Flugscheiben.")
+    , $(isL "Die starteten die Vril-Flugscheiben aus sogenannten spezial-gehärteten Silos.")
+    , $(isL "Ich weiß auch mittlerweile auch, wo die Vril Odin (hinge?)startet ist - zum Aldebaran.")
+    , $(isL "Das muss man natürlich alles wissen, alles das was reichsdeutsche Hochtechnologie vermag.")
+    , $(isL "Heute ist Deutschland ein Entwicklungsland.")
+    , $(isL "Wird sind die fünfte Wurzelrasse, die arische.")
+    , $(isL "Was wir haben, die himmlischen Flugscharen, ne?")
+    , $(isL "Die weiße Rasse stammt vom Aldebaran, vergesst das nicht!")
+    , $(isL "Die erste Wurzelrasse war die Polarrasse.")
+    , $(isL "Das äußerliche dieser Wesenheiten ist uns völlig schleierhaft, (..) Medusen, was weiß ich.")
+    , $(isL "Alles, auch das Universum, ist rhythmisch, zyklisch aufgebaut.")
+    , $(isL "Die Velociraptoren (…) hatte eine eigene Sprache, aus denen entstammen vermutlich die Reptos, iss so.")
+    , $(isL "Die sind nicht weg, die haben sich ins Erdinnere verkrochen.")
+    , $(isL "Als Däniken hochkam sein.. der Angehörige vom ZDF wurde erschossen.")
+    , $(isL "Da findet man auch Skelette von 8 Metern Länge, humanoid und andere Sachen… Flugscheiben Virmanas und dergleichen mehr.")
+    , $(isL "Woher die Reptos kommen ist mir auch bekannt.")
+    , $(isL "Die Reptos auch, die haben sich nur unterirdisch verlagert durch den Einschlag.")
+    , $(isL "In der Kruste! Nicht die innere Hohlwelt! Das ist ein großer Unterschied!")
+    , $(isL "Reste vom atlantischen Empire – das atlantische Imperium.")
+    , $(isL "Wer von euch kennt die theosophische Lehre?")
+    , $(isL "Kontinent Mu – die Südhemisphäre.")
+    , $(isL "Wir sind die nächste 4,5 Rasse, ne… die arische.")
+    , $(isL "Nech, die Blawatzki… die Blawatski spricht ja von Wurzelrasse.")
+    , $(isL "Dann folgt nach der Polarrasse, die hyperboreische Rasse, auch auf die Nordhemisphäre beschränkt.")
+    , $(isL "Dann, (…) die haben mit uns Ähnlichkeit, die lemurische Rasse.")
+    , $(isL "Nach der lemurischen Rasse, folgte das atlantische Imperium.")
+    , $(isL "Demnach ist die weiße Rasse, also sprich atlantische Imperium, eine Kolonie, eine aldebaranische Kolonie.")
+    , $(isL "Was jeder Erdenbürger wissen sollte!")
+    , $(isL "Woher sollen die Rassen, Negroid und Asiatit herkommen oder Isaac Krummburg?!")
+    , $(isL "Die ursprünglichen Wesenheiten waren die Reptos, die ich persönlich sehr mag.")
+    , $(isL "Verbotene Archäologie, das sind insgesamt drei Teile.")
+    , $(isL "In sekundenschnelle zu anderen Fixsternen.")
+    , $(isL "Gedanken sind infometrische Felder.")
+    , $(isL "Ja, das ist freie Energie.")
+    , $(isL "Zigfache Überlichtgeschwindigkeit - ganz wichtig.")
+    , $(isL "Denn die Erde ist ein lebender Organismus, vergesst das nicht.")
+    , $(isL "Sie wirken auf der Atomebene, nicht auf der Molekularebene - ganz wichtig.")
+    , $(isL "Damit haben Sie die Eigenschaft die Zeit der Zellen quasi zurückzudrehen.")
+    , $(isL "Man steckt erst richtig drin, wenn man auch der letzten Klofrau erklären kann, was Zeitreisen sind.")
+    , $(isL "Levitation! Mein Gott, die indischen Gurus machen uns das vor.")
+    , $(isL "Man kann mit Skalarwellen experimentiern.")
+    , $(isL "Macht es subsersiv, geht damit nicht an die Öffentlichkeit, schon garnicht ins Internet.")
+    , $(isL "Informetrisches Feld und informetrische Felder, Pluralis.")
+    , $(isL "Das ist nämlich das A und O des Universums.")
+    , $(isL "Wir sprechen von infometrischen Feldern.")
+    , $(isL "Skalarwellen oder Teslawellen sind eigentlich Wellen des Raum-Zeit-Kontinuums.")
+    , $(isL "Dort einzudringen würde ich nicht empfehlen! Nirgendwo!")
+    , $(isL "Die Erdkruste ist ja weltweit ein Gangsystem.")
+    , $(isL "Dort leben ja mehrere Zivilisationen, nicht nur eine. Ich hab Karten darüber.")
+    , $(isL "Eine Million Reichsdeutsche leben dort unten, in der inneren Hohlwelt.")
+    , $(isL "Dort einzudringen würde ich nicht empfehelen! Nirgendwo!")
+    , $(isL "Die altindischen Vimanas! Vimanas heißt Fluggerät Sanskrit, flogen mit Quecksilberwirbelmotoren.")
+    , $(isL "Ich erinnere noch einmal daran, dass mindestens rund eine Million reichsdeutscher Patente in alliierte Hände verschwand!")
+    , $(isL "Apropos unterirdische Bauwerke: Das Verhältnis von oberirdisch zu unterirdisch ist 1 zu 4!")
+    , $(isL "Gesamtberlin, wissen auch die wenigsten: 4 mal mehr - Unterdirdisch! Alles verzweigt!")
+    , $(isL "Das kann nur die Dritte Macht gewesen sein.")
+    , $(isL "Bayern ist ein Schlüsselpunkt!")
+    , $(isL "Daher die vielen Rassen, die unmöglich alle von dieser Erde stammen können.")
+    , $(isL "Anschliessend wurde die Erde als Strafkolonie genutzt.")
+    , $(isL "Unser Universum ist ja ein Perpetuum Mobile.")
+    , $(isL "Die Geheimbasen des Deutschen Reichs haben auch den Wiederaufbau Westdeutschlands organisiert.")
+    , $(isL "Ich sage nur Bipolarität des Universums.")
+    , $(isL "Was macht die Sonne uns vor, Implosion.")
+    , $(isL "Die Sonne ist kalt!")
+    , $(isL "Die Erde ist ja hohl.")
+    , $(isL "Das ist keine mongolische Mikroelektronik sondern deutsche Hochtechnologie!")
+    , $(isL "Ich kann mich in sekundenschnelle mit anderen Sternensystemen, Galaxien informieren.")
+    , $(isL "Das nächste Treffen findet an Führers Geburtstag statt.")
+    , $(isL "Und die sind zum Pluto, dem erdfernsten Planeten gestartet.")
+    , $(isL "Übrigens, meine Energiegruppe hat auch Kontakt zur Dritten Macht.")
+    , $(isL "Um in die innere Hohlwelt zu gelangen, muss ich 4000 KM Gesteinsmaterial überwinden.")
+    , $(isL "Hatten wir auch schon im 3. Reich.")
+    , $(isL "Ein versteckter Hinweis, dass der Mond in reichsdeutscher Hand nämlich ist.")
+    , $(isL "96 Flugzeuge * 60 Minuten * 14 Stunden * 40 Passagiere.")
+    , $(isL "Während des dritten Reiches war Nicola Tesla hier zu Besuch.")
+    , $(isL "Schwarze Sonne, bekannt!")
+    , $(isL "Ich nehme auch an, dass da auch das galaktische Imperium Aldebaran eine wesentliche Rolle spielt.")
+    , $(isL "Wir dürfen nicht mit irdischen Maßnahmen herangehen Leute, vergesst das nicht!")
+    , $(isL "Eine Art Monarchie oder weiß der Geier was.")
+    , $(isL "Nagelneue Flugscheiben.")
+    , $(isL "Flugscheibenkonstrukteur!")
+    , $(isL "Deutsche Raumfahrt ab 1934.")
+    , $(isL "Das hier ist nichts anderes als ein Strafplanet.")
+    , $(isL "Wie kämpfen Reichsdeutsche?")
+    , $(isL "Grüße aus der 9. Milchstraße.")
+    , $(isL "Es gibt eine Art galaktischer Konföderation in unserer Galaxis.")
+    , $(isL "Die hatten mehr Verluste als in Pearl Harbour, hihi.")
+    , $(isL "Eine ganz ekelhafte Waffe.")
+    , $(isL "Liegt im Krankenhaus, ich nehm an, dass sie ihn da mit Mikrowelle traktiert haben.")
+    , $(isL "Strahlenwaffen.. ist schon intelligenter, Mikrowelle, Skalarwelle.")
+    , $(isL "Wenn ich jetzt an Yellowstonepark denke, kann bald passieren, herrlich! Ich liebe ja Katastrophen.")
+    , $(isL "Ich finde Erdbeben schön.")
+    , $(isL "Wenn sich Risse auftun, ganze PKWs versinken, hehe – herrlich!")
+    , $(isL "Was richtet Luft an? Tornados!")
+    , $(isL "Was ist denn da wieder los? Wo ist meine Panzerfaust?")
+    , $(isL "Zerlegen macht Spaß!")
+    , $(isL "Internet ist ne schöne Waffe.")
+    , $(isL "Jetzt kommen wir zur Wetterbeeinflussung und -kriegsführung durch Skalarwellen.")
+    , $(isL "Ein Kamerad von mir musste da sein Leben lassen.")
+    , $(isL "Tödliche Organwellen.")
+    , $(isL "In Russland nennt man das heute die skalara Haubitze.")
+    , $(isL "Die sehr gefährliche amerikanische Lanzenviper (…) und der Mensch stirbt elendig innerhalb von 20 Minuten.")
+    , $(isL "Mögen sie in ihrem eigenen Blut erSAUFEN!")
+    , $(isL "Irgendwann ist Schluss mit lustig!")
+    , $(isL "So schön Waffen sind - es hat keine Sinn, Gewalt mit Gewalt zu begegnen.")
+    , $(isL "Übrigens, Spannung… Millionen von Volt - um das mal zu verdeutlichen!")
+    , $(isL "Die knallen durch!")
+    , $(isL "Die sind den Amis um mehrere Nasenlängen voraus.")
+    , $(isL "Und dann Himmel, Arsch und Zwirn!")
+    , $(isL "Die Russen verfügen über Monsterbomben.")
+    , $(isL "Viele Ökosysteme spielen heute schon verrückt.")
+    , $(isL "Die werden erhitzt und gehen kaputt.")
+    , $(isL "Nun wisst ihr auch, wie man künstlich Erdbeben auslöst.")
+    , $(isL "Solche seltenen Wetter-Skalar-Interferometer könnten Kugelblitze produzieren.")
+    , $(isL "Haarp-Projekt Alaska und anderes lässt grüßen.")
+    , $(isL "WAFFENSYSTEME! Da wirds interessant!")
+    , $(isL "Ich weiß auch, wie man sowas bauen kann - Mikrowellenterror und dergleichen mehr.")
+    , $(isL "Bis auf 200 Meter tief und mehr werden alle Hohlräume ausradiert.")
+    , $(isL "Knüppel aus dem Sack!")
+    , $(isL "Ich liebe Katastrophen!")
+    , $(isL "Da brauche ich keine Nuklearwaffen - nichtmal Mikrowelle.")
+    , $(isL "Oder ich lass die Fackelmänner los!")
+    , $(isL "Ich lache über Naturkatastrophen, die ich liebe!")
+    , $(isL "Vulkanausbrüche - was Schönes!")
+    , $(isL "Todesstrahlen, Todesstrahlen!")
+    , $(isL "Nuklear oder nicht-nuklear ist egal. Hauptsache alles ist zerstört.")
+    , $(isL "Es hat überhaupt keinen Sinn - der Tod überrascht Jeden!")
+    , $(isL "Zisch - Aus, weg war det - ein schöner Tod.")
+    , $(isL "Von wegen das Märchen über die desolate russische Armee - da kann ich nur lachen!")
+    , $(isL "Das sind natürlich dann schon fast Superbomben.")
+    , $(isL "Nuklearbomben sind Flöhe dagegen.")
+    , $(isL "Das sind einzigartige militärische Anwendungen.")
+    , $(isL "Heute werden wir über HAARP, sprich Wetterkriegsführung sprechen.")
+    , $(isL "Die Sowjets gackern nicht bevor das Ei gelegt ist.")
+    , $(isL "Man kann davon ausgehen, dass in jedem Neubaublock einer mit Mikrowelle experimentiert.")
+    , $(isL "Gegen Skalarwellen haben sie die Arschkarte - also die goldene.")
+    , $(isL "Mit Mikrowelle runterholen!")
+    , $(isL "Nach Möglichkeit mit wenig Blutvergiessen, vergesst das bitte nicht!")
+    , $(isL "Dabei denke ich an die Allee der Gehenkten.")
+    , $(isL "Ich kann aber auch, im Rahmen der Wetterkriegsführung Tornados künstlich erzeugen.")
+    , $(isL "Den Leuten wird speiübel, die fallen um.")
+    , $(isL "Man nennt das eine so genannte skalare Haubitze!")
+    , $(isL "Mikrowellenstrahler!")
+    , $(isL "Ist das bekannt HAARP, Alaska, Wetterkriegführung?")
+    , $(isL "Da bleibt von den Plattenbauten auch nichts mehr.")
+    , $(isL "Ne schöne Waffe, sollte man mal gegen die Loveparade einsetzen.")
+    , $(isL "Fußball… Gotteswillen - Opium fürs Volk saggich nur. Brot und Spiele. Iss was für Bekloppte.")
+    , $(isL "Letztlich war er aber nur eine zweibeinige Ertragsmaschine – man muss das mal so knallhart sagen.")
+    , $(isL "Die Wende war nicht plötzlich, die wurde schon von den Zionisten 1899 geplant – von den Illuminaten.")
+    , $(isL "Westliche Wertegemeinschaft und Demokratie sind auch aus meinem Wortschatz GE-STRI-CHEN!")
+    , $(isL "Das wird ja an den Schulen nicht mehr gelehrt.")
+    , $(isL "Eine gewöhnliche DILLGURKE – habter das gehört!")
+    , $(isL "Viele Frauen, die machen da Channeling und da kommt nur elektro-magnetischer Müll herüber.")
+    , $(isL "Die sind sehr empfänglich für Müll.")
+    , $(isL "Wird natürlich totgeschwiegen.")
+    , $(isL "Fußball… Gotteswillen - Opium fürs Volk saggich nur. Brot und Spiele. Iss was für Bekloppte.")
+    , $(isL "Das deutsche Volk verblödet – da gibt es ein Buch im Kopp-Verlag glaubich.")
+    , $(isL "Unterstes wird zu Oberstes gekehrt.")
+    , $(isL "Denken Sie zum Beispiel an die pervertierten Loveparade-Diskotheken und vieles mehr.")
+    , $(isL "Ja was sind denn das? Das sind Umschlagplätze für Drogen, Waffenhandel und Rotlicht-Milieu, mehr ist das nicht.")
+    , $(isL "Darauf setze ich einen Haufen.")
+    , $(isL "Wer die Lüge kennt und trotzdem nichts unternimmt, macht sich mitschuldig.")
+    , $(isL "Alles andere… Schrott!")
+    , $(isL "Wir werden verfolgt, vernichtet – von Isaak Krummbold.")
+    , $(isL "Es gibt noch andere bösartige Elemente, subversive Elemente – Volksschädlinge!")
+    , $(isL "Und der wurde vom Finanzjudentum auch nur ausgenutzt.")
+    , $(isL "Dafür musste er sterben.")
+    , $(isL "Nach dem Motto: Was nicht sein darf, nicht sein kann.")
+    , $(isL "Sie können alles was gelehrt wird zu 90% vergessen, noch… noch mehr!")
+    , $(isL "Besser ist immer der persönliche Kontakt, statt da den Elektrojuden zu nutzen.")
+    , $(isL "Internet ist so viel Schrott")
+    , $(isL "Naja.. bescheuert.")
+    , $(isL "Ja aus’n Negern! (…) Aus Schwarz wird nicht weiß!")
+    , $(isL "Die ganzen Darwinismus-Lügen.. vergesst es!")
+    , $(isL "Welch ein geistiger Dünnschiss saggich da nur!")
+    , $(isL "Was wird heute gelernt an den Schulen? Schrott! Müll!")
+    , $(isL "Eins ist aber jeden Fall ist Fakt, dass gewisse Kräfte versuchen die Rechte Szene (…) auseinanderzuplautzen.")
+    , $(isL "Bei Freimaurern, Illuminaten sagen wir mal (…) hat das alles eine Bedeutung.")
+    , $(isL "Man kann hinkommen, wo man will - alles Mist!")
+    , $(isL "Wenn man einmal in den Fängen der Ärzte ist, dann hat man verloren.")
+    , $(isL "Überall hat man dann die goldene Arschkarte.")
+    , $(isL "Schmeiß das aus dem Fenster!")
+    , $(isL "Energielobby, da ham was wieder, hähä!")
+    , $(isL "Wer GEZ zahlt ist selber dämlich.")
+    , $(isL "Geht mal ins Internet, Google-Suchmaschine, und gebt den Begriff Skalarwellen ein.")
+    , $(isL "Was machst du denn da wieder fürn Ödeldödel?!")
+    , $(isL "Das wäre ja dann wie bei der GEZ.")
+    , $(isL "Die würden bei mir alle in Physik die Note 100 kriegen.")
+    , $(isL "Was an der Schule natürlich nicht gelehrt wird und an den Universitäten auch nicht.")
+    , $(isL "Da kann der dämliche Ami nur träumen!")
+    , $(isL "Die armen Kinder, was aus denen werden soll - ja Mutanten, da hab ich auch kein Mitleid mehr!")
+    , $(isL "Bazillus Dummheit sag ich nur.")
+    , $(isL "Wisst Ihr eigentlich, wie die Dekadenz programmiert ist?")
+    , $(isL "Es funktioniert ja immer wieder - es gibt ja genug Verblödete.")
+    , $(isL "Wir leben in einer virtuellen Scheinwelt.")
+    , $(isL "Peverse Gehirne sind das, die sich sowas ausdenken!")
+    , $(isL "Ein dummes Volk lässt sich leichter beherrschen.")
+    , $(isL "Facebook, das ist alles was für Psychopathen meiner Meinung nach.")
+    , $(isL "Dissonanzen! Eine Dissonanz jagt die andere!")
+    , $(isL "Genau das haben die meisten nicht begriffen. Na ja, was soll man von Mutanten erwarten?")
+    , $(isL "Eine Welt voller Mutanten und Zombies mit einem IQ geringer als eine Dillgurke.")
+    , $(isL "Sie müssen schon Ihren Kopf jetzt zum Denken benutzen und nicht als Hutständer!")
+    , $(isL "Wir werden ja heute von Hacke bis Nacke belogen.")
+    , $(isL "Für mich ist das der Elektro-Jude.")
+    , $(isL "Das sind kranke Gehirne, aber es ist so.")
+    , $(isL "Scheiße gesellt sich zu scheiße!")
+    , $(isL "Und da braucht man sich nicht zu wundern, über die vielen Mutanten, die rumlaufen.")
+    , $(isL "Das sind Schmutzfinkjournalisten, die gehören an den Galgen.")
+    , $(isL "Es rollen sich mir die Fussnägel auf, wenn ich ins Internet gehe und gucke unter Skalarwelle.")
+    , $(isL "Mindcontrol, Bewusstseinskontrolle, versklavte Gehirne und so weiter und so fort.")
+    , $(isL "Nur Dreck, Nur Dreck, und der Bürger sieht sich das an!")
+    , $(isL "Unsinnige Talkshows, wenn ich das schon sehe - Uääääh!")
+    , $(isL "Kraftlose Schwätzer, die werden untergehen.")
+    , $(isL "Die doofen Amis, die trauen sich da nicht ran, ist doch klar.")
+    , $(isL "Handy an die Wand schmeissen, weg damit!")
+    , $(isL "Wenn ich meine bisheriges Leben betrachte, dann stelle ich fest, dass es Höhen und Tiefen gab.")
+    , $(isL "Ich muss auch dazu sagen, ich bin auch Sternbild Skorpion – da gibt es keine Grauzonen, nur Schwarz oder Weiß.")
+    , $(isL "Mein nächstes Buch ist auch schon fertig: Die schwarze Macht.")
+    , $(isL "Eine Zeit meiner Sammlertätigkeit begann.")
+    , $(isL "Ich hab auch nur für die Fächer was getan, die mich interessiert haben – gab dann nur Einsen oder Dreien.")
+    , $(isL "Ab meinem 14 Lebensjahr verfügte ich bereits über eine beachtliche geologische und gestaltete an Schulen entsprechende Ausstellungen, welche eine hohe Resonanz hatten.")
+    , $(isL "Seit meinem 15. Lebensjahr wohnte ich in der Reichshauptstadt Berlin.")
+    , $(isL "Sämtliche Naturwissenschaften Eins, wie sich das gehört.")
+    , $(isL "Während dieser Zeit besuchte ich zwei Jahre lang die Abendschule, 11. und 12. Klasse, so mal nebenbei.")
+    , $(isL "Das hab ich extern so neben… aus dem Ärmel gemacht.")
+    , $(isL "Da bin ich übrigens auch Mitglied, Prä-Astronautik- Äntschiens Äh… Ästronaut Society, mit Urkunde (…) und leitete die Uranier-Gruppe Astrophysik.")
+    , $(isL "Mein Kampf gegen die Lügen der Alliierten – das war der Grundstein.")
+    , $(isL "Dort war ich kein geringer als Hauptstrahlenschutzbeauftragter für die gesamte ehemalige DDR.")
+    , $(isL "Die ABC-Waffen gingen alle durch meine Hand, also Massenvernichtungswaffen.")
+    , $(isL "Finanzdienstleistungen – alles son Schnullifax, da weiß ich, wie die Verbrecher arbeiten.")
+    , $(isL "Kurz nach der Wende gründete ich die Fachgruppe Rätsel der Erdgeschichte, die sich auch mit Physik und Paläoastronautik beschäftigte.")
+    , $(isL "Eines Tages bekam ich in diesem Zusammenhang Kontakt zum Templerorden, wo ich heute leitend tätig bin.")
+    , $(isL "Durch jenen Verlag, und das ist jetzt ganz wichtig, gelangte ich an Schriften und Videos zum Thema Reichsdeutsche Hochtechnologie.")
+    , $(isL "Ich muss nur dazu sagen, in Naturwissenschaften kenne ich mich überall sehr gut aus, da macht mir so schnell keiner was vor.")
+    , $(isL "Sprache beherrsche ich – mehrere Fremdsprachen, ist für mich aber nur Mittel zum Zweck.")
+    , $(isL "Sportarten guck ich nur das, die ich selbst betrieben habe, bis zur Meisterschaft: Schach, Fechten, Degen, Florett, Schwert, Schießen und Military-Reiten, alles andere kann mich keiner hinterm Ofen vorlocken.")
+    , $(isL "Im erstgenannten Buch, Hochtechnologie im Dritten Reich, habe ich nicht nur physikalisch, mathematisch reichsdeutsche Technologien beschrieben, sondern räumte auch die hörigen alliierten Lügen gegen das Deutsche Reich auf.")
+    , $(isL "Angst und Unmöglichkeit sind aus meinem Wortschatz gestrichen.")
+    , $(isL "So lange ich lebe wird mein Kampf gegen die Alliierten anhalten.")
+    , $(isL "Napoleon Bonaparte ist auch eines meine Vorbilder, militärisch.")
+    , $(isL "Mich wundert… kann nix mehr erschüttern.")
+    , $(isL "Ich denke ja ganzheitlich vernetzt, nicht wahr!?")
+    , $(isL "Ich habe so viel Chaoten in letzter Zeit kennen gelernt, also… Schade um die Zeit, da hätte ich schon hundert Differentialgleichungen lösen können.")
+    , $(isL "Namen sind für mich Schall und Rauch, für mich sind Zahlen wesentlich.")
+    , $(isL "Ich selber bin die graue Eminenz.")
+    , $(isL "Gerichte und Polizei sind für mich Fremdwörter.")
+    , $(isL "Ich hab den Schutz der Dritten Macht!")
+    , $(isL "Ich genieße den Templerschutz und den Schutz der National Security Eygenzi.")
+    , $(isL "Bei mir in der Energiegruppe, die Leute, die nicht in der Lage sind ein einfaches Integral zu lösen, die schmeiße ich gnadenlos schon raus.")
+    , $(isL "Wenn andere die Fenster putzen (…), da löse ich partielle Differentialgleichungen.")
+    , $(isL "Wenn man den Algorithmus erkannt hat, und ich hab ihn erkannt, erspare ich mir zehntausende Seiten zu lesen.")
+    , $(isL "Ich kann Zeit beschleunigen, ich kann Zeit aber auch verlangsamen.")
+    , $(isL "Ich halt es mit Napoleons Worten: Angst und Unmöglichkeit sind aus meinem Wortschatz gestrichen!")
+    , $(isL "Wir sind die Top-Ten, auf der ganzen Erde.")
+    , $(isL "Wer kann das, außer mir?")
+    , $(isL "Das hole ich locker wieder rein mit meinen Schriften.")
+    , $(isL "Ich beherrsche die englische Sprache in Wort, Bild und Schrift.")
+    , $(isL "Aus tausend Seiten mach ich euch eine.")
+    , $(isL "Man sollte sich mit Putin gut stellen - Ich kenne ihn übrigens persönlich, komme mit ihm gut klar.")
+    , $(isL "Die Meisten begreifen es leider nicht, darauf kann ich natürlich keine Rücksicht nehmen.")
+    , $(isL "Auch nachzulesen in meinem Bestseller-Buch.")
+    , $(isL "Nicht umsonst ist ja eines meiner Bücher ein Bestseller.")
+    , $(isL "Ich sitze auf der Spitze der Pryramide.")
+    , $(isL "Was da an Mimikry ausgeübt wird (…) das was ja im Tierreich bekannt.")
+    , $(isL "Im Indo-Pazifik kann man sie lebend finden.")
+    , $(isL "Wer kennt Mastodon?")
+    , $(isL "Trilobiten Dreilapp-Krebse, offiziell ausgestorben, hahahaha!")
+    , $(isL "Ah.. die fette Kuh erhebt sich.. sehr schön. Na iss doch wahr.")
+    , $(isL "Viehzeug muss gepudert werden!")
+    , $(isL "Wenn man seine Katze in den Mikrowellenherd zum Trocknen reinschiebt sieht man die Wirkung am Besten.")
+    , $(isL "Das arme Tier, naja gut - was solls?")
+    , $(isL "Täglich sterben tausende von Tierarten aus.")
+    , $(isL "Was bedeutete die Wende für mich? Zunächst einmal nur Nachteile.")
+    , $(isL "Zu viel Flüssigkeit.. der Regen, der reicht schon.")
+    , $(isL "Wasser ist Gift!")
+    , $(isL "Sonst krieg ich quadratische Augen!")
+    , $(isL "Ich selber bin ein stinkenfauler Mensch was körperliche Arbeit angeht.")
+    , $(isL "Was ist denn das für Musik?")
+    , $(isL "Ich bin ein Mensch, wenn ich schon Schnee sehe, kriege ich ’ne Erkaeltung.")
+    , $(isL "Ich hasse Schnee, ist was fuer dumme Bauern.")
+    , $(isL "Meine Temperaturen sind 40 Grad plus und 100% Luftfeuchtigkeit.")
+    , $(isL "Alles was unter 20 Grad ist, ist fuer mich Frost.")
+    , $(isL "Die Tür schon wieder!")
+    , $(isL "Da komme ich mir vor wie eine tibetanische Gebetsmuehle oder tausend Studenten.")
+    , $(isL "Die Tür, ja was ist denn das?")
+    , $(isL "Wie sagte noch Napoleon:")
+    , $(isL "Es gibt keine Zufälle.")
+    , $(isL "Meine Meinung – dazu stehe ich!")
+    , $(isL "Spaß muss sein, Leute!")
+    , $(isL "Ich fürchte, wir müssen völlig umdenken!")
+    , $(isL "Dann haste die diamantene Arschkarte.")
+    , $(isL "Wir leben in einer sehr interessanten Zeit.")
+    , $(isL "Wir sind nicht umsonst hier hineininkarniert oder hineingeboren.")
+    , $(isL "Damit danke ich für die Aufmerksamkeit.")
+    , $(isL "Das ist wieder ne Sache für sich.")
+    , $(isL "Aber man latscht nur einmal auf die Harke.")
+    , $(isL "Jetzt kommen wir zum Schluss der heutigen Lektion.")
+    , $(isL "Man kann nicht auf allen Hochzeiten tanzen.")
+    , $(isL "Alles vermeidbare Risiken!")
+    , $(isL "Deshalb müssen wir sie mit aufklären.")
+    , $(isL "Es gibt dort ne Menge Häkchen und Ösen – man kann geteilter Meinung sein.")
+    , $(isL "Die Meinungen divergieren sehr sehr stark.")
+    , $(isL "Da muss man natürlich die Kräfte erkennen.")
+    , $(isL "Ruhe da hinten!")
+    , $(isL "Muss auch militärische Ordnung herrschen!")
+    , $(isL "Haltet euch fest!")
+    , $(isL "Hähä!")
+    , $(isL "Ein Wahnsinn ja.")
+    , $(isL "Muss ich noch deutlicher werden? Ich glaube nicht!")
+    , $(isL "Das muss man begreifen, ist ja wirklich leicht.")
+    , $(isL "Wer das begreift, der weiß schon sehr viel.")
+    , $(isL "Das ist wichtig zu wissen.")
+    , $(isL "Das ist jetzt das, was Sie sich merken sollten.")
+    , $(isL "Nichts einfacher als das.")
+    , $(isL "Repetitio est mater studiorum!")
+    , $(isL "Ich halte mich auch kurz, denn in der Kürze liegt die Würze.")
+    , $(isL "Man muss schon wirklich zwischen Dichtung und Wahrheit differenzieren können!")
+    , $(isL "Für die Nichtwissenden mag das wie Glockengeläut in den Ohren klingen.")
+    , $(isL "Das erfordert natürlich etwas Gehirnschmalz.")
+    , $(isL "Nichts ist unglaublicher als die Wahrheit.")
+    , $(isL "Spass muss sein.")
+    , $(isL "Zack, einfach ist das.")
+    , $(isL "Kein Problem!")
+    , $(isL "Da staunt ihr, was?")
+    , $(isL "Mein Gott!")
+    , $(isL "Da haben wirs mit einem Satz!")
+    , $(isL "So muss das sein!")
+    , $(isL "Ja, Heil!")
+    , $(isL "Ein zweischeidiges Schwert,ne?")
+    , $(isL "Die Zusammenhänge sind glasklar!")
+    , $(isL "Muss man schon dann kümmern, wenn man dran kommen will!")
+    , $(isL "Klar?!")
+    , $(isL "Muss mann wissen!")
+    , $(isL "Vergessen Sie’s!")
+    , $(isL "Bekannt ja?")
+    , $(isL "Alles andere ist unnötig.")
+    , $(isL "Wer weiß das? Wieder keiner!")
+    , $(isL "Sehr Gut!")
+    , $(isL "Klar, ne?!")
+    , $(isL "Silentium!")
+    , $(isL "Gibt es. darf man nicht außer Acht lassen.")
+    , $(isL "So einfach ist das, muss man nur wissen.")
+    , $(isL "So einfach ist das.")
+    , $(isL "Es gibt keine Zufälle!")
+    , $(isL "Da werden Sie staunen!")
+    , $(isL "Muss man natürlich wissen.")
+    , $(isL "Wissen auch die Wenigsten.")
+    , $(isL "Gibt’s interessante Fachliteratur.")
+    , $(isL "Ruhe!")
+    , $(isL "Alle 100 Jahre findet ein großer Illuminati-Kongress statt, da werden die Ziele für die nächsten 100 Jahre gesteckt, auch der Euro.")
+    , $(isL "Darf er nicht drüber erzählen, sonst würde er kein Geld mehr bekommen für seine kostspieligen Reisen.")
+    , $(isL "Aus Sicherheitsgründen habe ich keine andere Namen außer meinem genannt – nach dem Motto:")
+    , $(isL "Das kommt ja erst nächstes mal, da muss man das Gehirn schon arbeiten lassen.")
+    , $(isL "Aber ich schätze mal, wir stehen kurz vor einem Wendepunkt.")
+    , $(isL "Ja.. summ summ summ.")
+    , $(isL "Der war sehr gut.")
+    , $(isL "Konfuzius, das ist der Status Quo.")
+    , $(isL "Mindestens sind das reine Vegetarier, was mir schon sympathisch ist.")
+    , $(isL "Wie heißt er? Peter Fitzek? Hab ich kennen gelernt da.. da schließt sich der Kreis!")
+    , $(isL "Peter Fitzek (…), der kennt wieder die Leute meiner Energiegruppen.")
+    , $(isL "Ich beobachte die Szene aber weiter.")
+    , $(isL "Das ist wie mit der Drehscheibe, man lernt Leute kennen – hochinteressant muss ich sagen!")
+    , $(isL "Such is life.")
+    , $(isL "Wir machen’s wie mit der Schiebewurst - das Beste immer zum Schluss.")
+    , $(isL "Er war auch in den Vereinigten Emiraten, bloß da hat man ihn auch nur betrogen, beschissen.")
+    , $(isL "Ich habs gesehen Fata Morgana, Namib Wüste.")
+    , $(isL "Denn Hunger und Durst macht böse.")
+    , $(isL "Übrigens gibt es kein Gut und kein Böse in dem Sinne.")
+    , $(isL "Zuerst probiert man dekadente Musik in Sydney, Australien aus.")
+    , $(isL "Ähnliches ist ja auch in Deutschland geplant, Vorsicht!")
+    , $(isL "Am besten einen Stiefel Whisky trinken.")
+    , $(isL "Mit Dynamit beginnt man den Tag dynamisch!")
+    , $(isL "Arme und Beine bilden eine rotierende Scheibe, die Ohren flattern im Wind und das Arschloch bildet den höchsten Punkt.")
+    , $(isL "Wie mein Templerbruder vom Altorden Norbert Jürgen-Ratthofer zu sagen pflegte.")
+    , $(isL "Wisst Ihr was das heißt? Eine Million Jahre?")
+    , $(isL "Es gibt ein Prag - in Bayern.")
+    , $(isL "Das Wort Zufall ist aus meinem Wortschatz gestrichen.")
+    , $(isL "Die lachen uns aus!")
+    , $(isL "Und zur Not hilft eben ein Marsch. Fußmarsch, Wolfsangelmarsch.")
+    , $(isL "Das ist geheimes Templerwissen.")
+    , $(isL "Anschließend machen wir ’ne Raucherpause.")
+    , $(isL "Na, wer hat Warsteiner bestellt?")
+    , $(isL "Die kann man erwerben gegen 2 Euro.")
+    , $(isL "Es kommen gigantische Umwälzungen auf uns.")
+    , $(isL "Die Inselaffen hasse ich sowieso!")
+    , $(isL "Rotwein ist gesund - Templerwein!")
+    , $(isL "Das ist auch gegen Krebs und alles mögliche.")
+    , $(isL "Alles ist vorhersehbar!")
+    , $(isL "3 mal Storgram reinen Alkohol!")
+    , $(isL "Das schirmt gegen radioaktive Strahlung ab.")
+    , $(isL "Irrtum! Gezielte Desinformation!")
+    , $(isL "Mathematik mein lieber #{target}, hö?!")
+    , $(isL "Dich meine ich #{target}, nicht einschlafen!")
+    , $(isL "Für die Templermitglieder, #{target}? Nächsten Sonnabend, Roseneck – ab 18:00 Uhr, weisse bescheid?")
+    , $(isL "Du erinnerst dich, #{target}!?")
+    , $(isL "Ja du lachst, #{target}… sieh ins zionistische Protokoll!")
+    , $(isL "Hat noch jemand einen Beitrag zu liefern, #{target}?")
+    , $(isL "Wer hat hier Bier, #{target}?")
+    , $(isL "#{target} kommt - vom Klo, aber er kommt.")
+    , $(isL "Negativmagnetismus, was ist das denn wieder, #{target}?")
+    , $(isL "#{target} du beschäftigst dich damit hoffentlich (…) - du, ich frag Dir das ab sonst.")
+    , $(isL "Richtig #{target} - siehste #{target} denkt mit, das gefällt mir an dir!")
+    , $(isL "Auch für dich wichtig, #{target} - für deine Experimente.")
+    , $(isL "Absichtlich, richtig #{target}!")
+    , $(isL "#{target}, denk auch an Chemtrails!")
+    , $(isL "Altmeister #{target}, in Front vor mir sitzend.")
+    , $(isL "#{target} los, schreib das auf!")
+    , $(isL "Ja #{target}! Da ist was im Busch!")
+    , $(isL "#{target}! Das betrifft auch dich!")
     ]

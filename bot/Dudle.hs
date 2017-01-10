@@ -23,7 +23,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE NamedFieldPuns   #-}
 {-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE TemplateHaskell #-}
 module Dudle where
 
 
@@ -41,9 +40,10 @@ import System.Directory
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict as HM
 import Control.Monad
-import Data.Text (unpack)
 import Data.List
 import Marvin.Adapter.Slack
+import Marvin.Interpolate.String
+import qualified Data.Text.Lazy as L
 
 
 defaultDudleDB = "./data/dudle.json"
@@ -54,19 +54,19 @@ dudleDB = fromMaybe defaultDudleDB <$> getConfigVal "db"
 
 
 data Dudle = Dudle
-    { dShortname   :: String
+    { dShortname   :: L.Text
     , dUrl         :: String
     , dLastChecked :: UTCTime
     }
 
 
-type Dudles = HM.HashMap String Dudle
+type Dudles = HM.HashMap L.Text Dudle
 
 
 deriveJSON defaultOptions {fieldLabelModifier = tail} ''Dudle
 
 
-script :: ScriptInit SlackRTMAdapter
+script :: ScriptInit (SlackAdapter RTM)
 script = defineScript "dudle" $ do
 
     checkAllDudles_IO <- extractAction checkAllDudles
@@ -74,7 +74,7 @@ script = defineScript "dudle" $ do
     void $ liftIO $ execSchedule $
         addJob checkAllDudles_IO "00 00 9 * * *"
 
-    respond (r [caseless] "subscribe (.*)") $ do
+    respond (r [CaseInsensitive] "subscribe (.*)") $ do
         (_:match:_) <- getMatch
         -- shortnameFromLink returns same content early if it's not a link
         let shortname = shortnameFromLink match
@@ -87,49 +87,49 @@ script = defineScript "dudle" $ do
             then send "Das tracke ich bereits."
             else do
                 saveDudleToFile shortname dudle_link
-                send $ "Ok, ich poste Updates zu " ++ shortname ++ " in #dudle."
+                send $ $(isL "Ok, ich poste Updates zu #{shortname} in #dudle.")
 
-    respond (r [caseless] "unsubscribe (.*)") $ do
+    respond (r [CaseInsensitive] "unsubscribe (.*)") $ do
         (_:shortname:_) <- getMatch
         found <- removeDudleFromFile shortname
         send $ if found
-                  then "Ok, tracke " ++ shortname ++ " nicht mehr."
+                  then $(isL "Ok, tracke #{shortname} nicht mehr.")
                   else "Tracke aktuell nichts mit diesem Namen."
 
-    respond (r [caseless] "dudlelist") $ do
+    respond (r [CaseInsensitive] "dudlelist") $ do
         send "Aktuell tracke ich folgende Dudles:"
         dudles <- readDudlesFile
         for_ dudles $ \Dudle{dShortname, dUrl} ->
-            send $ dShortname ++ ": " ++ dUrl
+            send $ $(isL "#{dShortname}: #{dUrl}")
 
-    respond (r [caseless] "dudle (.*)") $ do
+    respond (r [CaseInsensitive] "dudle (.*)") $ do
         (_:shortname:_) <- getMatch
-        let dudle_link = "https://dudle.inf.tu-dresden.de/" ++ shortname ++ "/"
+        let dudle_link = $(isS "https://dudle.inf.tu-dresden.de/#{shortname}/")
         r <- liftIO $ get dudle_link
         if r^.responseStatus.statusCode /= 200
             then send "Sieht nicht so aus, als ob das Dudle (noch) existiert."
             else
                 case parseTotal $ r^.responseBody of
-                    Nothing -> errorM "Dudle unparseable" >> send "Dudle unparseable"
+                    Nothing -> logErrorN "Dudle unparseable" >> send "Dudle unparseable"
                     Just v | null v -> send "Das Dudle scheint leer zu sein..."
-                    Just v -> for_ v $ \(opt, count) -> send $ printf "Option {} mit {} Stimmen" opt count
+                    Just v -> for_ v $ \(opt, count) -> send $(isL "Option #{opt} mit #{count} Stimmen")
 
 shortnameFromLink link
     | not $ isDudleUrl link = link
-    | hasTrailingSlash link = lastSegment $ init link
+    | hasTrailingSlash link = lastSegment $ L.init link
     | otherwise = lastSegment link
   where
-    lastSegment = dropWhileEnd (/= '/')
+    lastSegment = L.dropWhileEnd (/= '/')
 
 makeValidDudleLink str
     | isDudleUrl str =
-        if hasTrailingSlash str then str else str ++ "/"
-    | otherwise = "https://dudle.inf.tu-dresden.de/" ++ str ++ "/"
+        if hasTrailingSlash str then L.unpack str else L.unpack $ str `L.snoc` '/'
+    | otherwise = $(isS "https://dudle.inf.tu-dresden.de/#{str}/")
 
-isDudleUrl = isJust . match [] pat
+isDudleUrl = isJust . match pat
   where pat = r [] "dudle\\.inf\\." :: Regex
 
-hasTrailingSlash = ("/" `isSuffixOf`)
+hasTrailingSlash = ("/" `L.isSuffixOf`)
 
 isAlreadySubscribed shortname = do
     file <- readDudlesFile
@@ -139,19 +139,19 @@ readDudlesFile = do
     dudle_loc <- dudleDB
     exists <- liftIO $ doesFileExist dudle_loc
     if not exists
-        then errorM ("Couldnt find dudle file \"" ++ dudle_loc ++ "\"") >> return mempty
+        then logErrorN $(isT "Couldnt find dudle file \"#{dudle_loc}\"") >> return mempty
         else do
-            file <- liftIO $ BL.readFile dudle_loc
-            case eitherDecode file of
+            file <- readJSON dudle_loc
+            case file of
                 Right f  -> return f
-                Left err -> errorM err >> return mempty
+                Left err -> logErrorN $(isT "#{err}") >> return mempty
 
 withDudlesFile :: (Dudles -> BotReacting a b (Maybe Dudles)) -> BotReacting a b ()
 withDudlesFile action = readDudlesFile >>= action >>= maybe (return ()) writeDudlesFile
 
 writeDudlesFile dudles = do
     dudleLoc <- dudleDB
-    liftIO $ BL.writeFile dudleLoc $ encode dudles
+    writeJSON dudleLoc dudles
 
 saveDudleToFile shortname url = withDudlesFile $ \dudles -> do
     date <- liftIO getCurrentTime
@@ -179,11 +179,11 @@ checkDudleFeed eventCallback dudles dudle = do
     r <- liftIO $ get atom_url
     if r^.responseStatus.statusCode /= 200
         then do
-            messageChannel "#dudle" $ "Feed for dudle " ++ dShortname dudle ++ " not found. Removing it from list."
+            messageChannel "#dudle" $(isL "Feed for dudle #{dShortname dudle} not found. Removing it from list.")
             return $ HM.delete (dShortname dudle) dudles
         else
             case parseFeedSource $ r^.responseBody of
-                Nothing -> errorM "Feed unparseable" >> return dudles
+                Nothing -> logErrorN "Feed unparseable" >> return dudles
                 Just feed -> do
                     let articles = getFeedItems feed
 
@@ -200,6 +200,7 @@ checkDudleFeed eventCallback dudles dudle = do
                         $ articles
                             & filter ((< last_checked) . fromJust . join . getItemPublishDate)
                             & mapMaybe getItemTitle
+                            & map L.pack
                     return $ HM.insert (dShortname dudle) dudleLater dudles
 
 
@@ -207,12 +208,12 @@ checkDudleFeed eventCallback dudles dudle = do
 publishEvents dudle events
     | null events = return ()
     | otherwise = do
-        messageChannel "#dudle" $ "Neues zum Dudle " ++ dShortname dudle ++ ":"
+        messageChannel "#dudle" $(isL "Neues zum Dudle #{dShortname dudle}:")
         let eventsChron = reverse events -- let's do this in chronological order
         for_ eventsChron $ messageChannel "#dudle"
-        messageChannel "#dudle" $ "Mehr Infos direkt hier: " ++ dUrl dudle
+        messageChannel "#dudle" $(isL "Mehr Infos direkt hier: #{dUrl dudle}")
 
-parseTotal :: BL.ByteString -> Maybe [(String, String)]
+parseTotal :: BL.ByteString -> Maybe [(L.Text, L.Text)]
 parseTotal body = do
     hi <- header_items
     return $ zip hi summary_items
@@ -235,5 +236,5 @@ index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
 index l i = Just $ l !! i
 
-elementsOfColumn :: [Cursor] -> [String]
-elementsOfColumn = map (unpack . head . ($| Cursor.content)) . tail
+elementsOfColumn :: [Cursor] -> [L.Text]
+elementsOfColumn = map (L.fromStrict . head . ($| Cursor.content)) . tail

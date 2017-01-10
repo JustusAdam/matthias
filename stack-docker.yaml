@@ -6,3 +6,7 @@ extra-deps:
 - marvin-0.0.7
 - marvin-interpolate-0.4.0
 resolver: lts-7.15
+docker:
+    enable: true
+    repo: "fpco/stack-build"
+    auto-pull: true
