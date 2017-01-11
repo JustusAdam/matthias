@@ -15,8 +15,8 @@
 module DrSommer where
 
 
-import Marvin.Prelude
 import qualified Data.Text.Lazy as L
+import           Marvin.Prelude
 
 
 script :: IsAdapter a => ScriptInit a

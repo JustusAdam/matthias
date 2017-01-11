@@ -17,14 +17,14 @@
 
 module Geruecht where
 
-import Marvin.Prelude
-import Network.Wreq
-import Control.Lens
-import Text.XML.Cursor as C
-import Text.XML
-import Data.Text (unpack, replace, strip)
-import Data.Text.Lazy (fromStrict)
-import Marvin.Interpolate.String
+import           Control.Lens
+import           Data.Text                 (replace, strip, unpack)
+import           Data.Text.Lazy            (fromStrict)
+import           Marvin.Interpolate.String
+import           Marvin.Prelude
+import           Network.Wreq
+import           Text.XML
+import           Text.XML.Cursor           as C
 
 
 script :: IsAdapter a => ScriptInit a
@@ -37,7 +37,7 @@ script = defineScript "gerücht" $
         let cursor = fromDocument $ parseLBS_ def $ r^.responseBody
             txt = head $ cursor $// C.element "div" &/ C.content
             replaced = strip $ replace "Psst..." "" txt
-        
+
         rand <- randomFrom prefixes
 
         send $ fromStrict $ rand `mappend` replaced

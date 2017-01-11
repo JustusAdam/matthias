@@ -16,10 +16,10 @@
 module Stoll where
 
 
-import           Data.Maybe     (fromJust)
-import Data.String.Utils
+import           Data.Maybe        (fromJust)
+import           Data.String.Utils
+import qualified Data.Text.Lazy    as L
 import           Marvin.Prelude
-import qualified Data.Text.Lazy as L
 
 
 script :: IsAdapter a => ScriptInit a

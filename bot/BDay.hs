@@ -23,20 +23,20 @@
 
 module BDay where
 
-import Marvin.Prelude
-import Marvin.Util.JSON
-import Data.Time
-import System.Cron
-import Data.HashMap.Strict (HashMap, toList, mapWithKey)
-import qualified Data.HashMap.Strict as HM
-import Data.Maybe (fromMaybe)
+import           Control.Lens
+import           Control.Monad
 import qualified Data.ByteString.Lazy as B
-import Data.Foldable (for_)
-import Control.Monad
-import Control.Lens
-import Data.Char
-import Data.List (intercalate)
-import qualified Data.Text.Lazy as L
+import           Data.Char
+import           Data.Foldable        (for_)
+import           Data.HashMap.Strict  (HashMap, mapWithKey, toList)
+import qualified Data.HashMap.Strict  as HM
+import           Data.List            (intercalate)
+import           Data.Maybe           (fromMaybe)
+import qualified Data.Text.Lazy       as L
+import           Data.Time
+import           Marvin.Prelude
+import           Marvin.Util.JSON
+import           System.Cron
 
 dontShow = 1900
 
@@ -64,9 +64,9 @@ script = defineScript "bday" $ do
                 (year, month, day) = toGregorian $ utctDay today
                 (bDayYear, bDayMonth, bDayDay) = toGregorian bday
             when (bDayMonth == month && day == bDayDay) $ messageChannel "#random" $(isL ":tada: Alles Gute zum Geburtstag, #{ix 0 %~ toUpper $ name}! :tada:")
-    
+
     void $ liftIO $ execSchedule $
-        addJob congratulate "00 00 9 * * *"    
+        addJob congratulate "00 00 9 * * *"
 
     respond (r [CaseInsensitive] "(birthday|bday|geburtstag)\\??$") $ do
         today <- utctDay <$> liftIO getCurrentTime
@@ -91,7 +91,7 @@ script = defineScript "bday" $ do
                 | daysDiff == 0 = "heute!"
                 | otherwise = $(isL "in nur #{daysDiff} Tagen.")
 
-            msgStr = 
+            msgStr =
                 case birthdayBoysAndGirls of
                     [first] -> $(isL "Das nächste Geburtstagskind ist #{first}")
                     _ -> $(isL "Die nächsten Geburstage sind von #{L.intercalate \", \" (init birthdayBoysAndGirls)} und #{last_}")
@@ -117,7 +117,7 @@ formatBirthdayInfo name birthday
     | birthdayYear == dontShow = return $(isL "#{ix 0 %~ toUpper $ name} hat am #{birthdayDay}.#{birthdayMonth}. Geburtstag.")
     | otherwise = do
         today <- utctDay <$> liftIO getCurrentTime
-        let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday 
+        let (age, _, _) = toGregorian $ ModifiedJulianDay $ diffDays today birthday
         return $(isL "#{ix 0 %~ toUpper $ name} wurde am #{birthdayDay}.#{birthdayMonth}. geboren. Das war vor #{age} Jahren! :O")
   where
     (birthdayYear, birthdayMonth, birthdayDay) = toGregorian birthday

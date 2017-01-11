@@ -26,25 +26,27 @@
 module Dudle where
 
 
-import           Control.Lens     hiding (element, index)
-import           Data.Maybe       (fromJust, isJust, mapMaybe)
+import           Control.Arrow
+import           Control.Lens              hiding (element, index)
+import           Control.Monad
+import           Data.Aeson.Types
+import qualified Data.ByteString.Lazy      as BL
+import qualified Data.HashMap.Strict       as HM
+import           Data.List
+import           Data.Maybe                (fromJust, isJust, mapMaybe)
+import qualified Data.Text.Lazy            as L
 import           Data.Time
+import           Marvin.Adapter.Shell
+import           Marvin.Adapter.Slack
+import           Marvin.Interpolate.String
 import           Marvin.Prelude
-import           Network.Wreq     hiding (delete)
+import           Network.Wreq              hiding (delete)
 import           System.Cron
+import           System.Directory
 import           Text.Feed.Import
 import           Text.Feed.Query
-import           Text.XML         hiding (readFile, writeFile)
-import           Text.XML.Cursor  as Cursor
-import System.Directory
-import qualified Data.ByteString.Lazy as BL
-import qualified Data.HashMap.Strict as HM
-import Control.Monad
-import Data.List
-import Marvin.Adapter.Slack
-import Marvin.Adapter.Shell
-import Marvin.Interpolate.String
-import qualified Data.Text.Lazy as L
+import           Text.XML                  hiding (readFile, writeFile)
+import           Text.XML.Cursor           as Cursor
 
 
 defaultDudleDB = "./data/dudle.json"
@@ -64,7 +66,7 @@ data Dudle = Dudle
 type Dudles = HM.HashMap L.Text Dudle
 
 
-deriveJSON defaultOptions {fieldLabelModifier = tail} ''Dudle
+deriveJSON defaultOptions {fieldLabelModifier = camelTo2 '_' . tail} ''Dudle
 
 
 script :: ScriptInit (SlackAdapter RTM)
@@ -144,7 +146,7 @@ readDudlesFile = do
         else do
             file <- readJSON dudle_loc
             case file of
-                Right f  -> return f
+                Right f  -> return $ HM.fromList $ map (dShortname &&& id) f
                 Left err -> logErrorN $(isT "#{err}") >> return mempty
 
 withDudlesFile :: (Dudles -> BotReacting a b (Maybe Dudles)) -> BotReacting a b ()
@@ -152,7 +154,7 @@ withDudlesFile action = readDudlesFile >>= action >>= maybe (return ()) writeDud
 
 writeDudlesFile dudles = do
     dudleLoc <- dudleDB
-    writeJSON dudleLoc dudles
+    writeJSON dudleLoc $ HM.elems dudles
 
 saveDudleToFile shortname url = withDudlesFile $ \dudles -> do
     date <- liftIO getCurrentTime

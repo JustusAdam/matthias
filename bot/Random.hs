@@ -20,16 +20,16 @@ import           Control.Lens
 import           Marvin.Prelude
 import           Network.Wreq
 
-import Marvin.Interpolate.String
-import qualified Data.Text.Lazy as L
-import qualified Data.Text.Lazy.Encoding as L
+import qualified Data.Text.Lazy            as L
+import qualified Data.Text.Lazy.Encoding   as L
+import           Marvin.Interpolate.String
 
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "random" $ do
     hear ".*" $ do
         user <- getUser >>= getUsername
-        
+
         when (user == donny) $ do
             rand <- randomFrom walterQuotes
             send rand

@@ -17,17 +17,17 @@
 
 -- Author:
 --   kiliankoe
-{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Apbdoor (script) where
 
 
 import           Control.Lens
+import           Data.ByteString.Lazy.Char8 (unpack)
+import           Data.List
+import           Marvin.Interpolate.String
 import           Marvin.Prelude
 import           Network.Wreq
-import Data.List
-import Data.ByteString.Lazy.Char8 (unpack)
-import Marvin.Interpolate.String
 
 
 script :: IsAdapter a => ScriptInit a

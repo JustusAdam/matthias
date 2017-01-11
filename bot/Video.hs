@@ -19,9 +19,9 @@ module Video where
 import           Control.Lens
 import           Data.Aeson
 import           Data.Aeson.Lens
+import qualified Data.Text.Lazy  as L
 import           Marvin.Prelude
 import           Network.Wreq
-import qualified Data.Text.Lazy as L
 
 
 script :: IsAdapter a => ScriptInit a

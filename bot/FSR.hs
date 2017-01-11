@@ -20,14 +20,14 @@
 module FSR where
 
 
-import Marvin.Prelude
-import Data.Time
-import Network.Wreq
-import Control.Lens
-import Data.List
-import Data.Char
-import Data.ByteString.Lazy.Char8 (unpack) 
-import qualified Data.Text.Lazy as L
+import           Control.Lens
+import           Data.ByteString.Lazy.Char8 (unpack)
+import           Data.Char
+import           Data.List
+import qualified Data.Text.Lazy             as L
+import           Data.Time
+import           Marvin.Prelude
+import           Network.Wreq
 
 
 getDay (_, _, day) = day

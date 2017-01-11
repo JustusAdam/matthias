@@ -18,9 +18,9 @@ module QR where
 import           Control.Lens
 import           Data.Aeson
 import           Data.Aeson.Lens
+import           Marvin.Interpolate.String
 import           Marvin.Prelude
 import           Network.Wreq
-import Marvin.Interpolate.String
 
 script :: IsAdapter a => ScriptInit a
 script = defineScript "qr" $
