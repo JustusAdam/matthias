@@ -42,6 +42,7 @@ import qualified Data.HashMap.Strict as HM
 import Control.Monad
 import Data.List
 import Marvin.Adapter.Slack
+import Marvin.Adapter.Shell
 import Marvin.Interpolate.String
 import qualified Data.Text.Lazy as L
 

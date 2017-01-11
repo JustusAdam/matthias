@@ -56,7 +56,7 @@ script = defineScript "fsr" $ do
 
                 send $(isL "Nur noch #{datediff} Tage bis zur ESE 2016. Vermutlich :stuck_out_tongue_winking_eye:")
 
-    respond (r [CaseInsensitive] "(wer|jemand) (da|im (büro|buero))|licht an)\\?") $ do
+    respond (r [CaseInsensitive] "((wer|jemand) (da|im (büro|buero))|licht an)\\?") $ do
         r <- liftIO $ get "https://www.ifsr.de/buerostatus/output.php"
         send $ case dropWhile isSpace $ dropWhileEnd isSpace $ unpack $ r^.responseBody of
                   "1" -> "Scheint so."
