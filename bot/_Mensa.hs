@@ -59,52 +59,52 @@ script = defineScript "mensa" $ do
         addJob dailyMensa "00 30 10 * * 1-5"
 
 
-  getImage = (msg, imgid) ->
-    tzoffset = (new Date()).getTimezoneOffset() * 60000
-    now = (new Date(Date.now() - tzoffset)).toISOString().slice(0,10)
-    robot.http("http://openmensa.org/api/v2/canteens/79/days/#{now}/meals")
-      .get() (err, res, body) ->
-        if body.trim() == ""
-          msg.send "This mensa is currently out of order, sorry."
-        else
-          data = JSON.parse body
-          output = "#{data.map(formatOutput).join('\n')}\n"
-          stringstart = output.indexOf("#{imgid}: ")
-          if stringstart > -1
-            if imgid > 9
-              stringstart += 5
-            else
-              stringstart += 4
-            output = output.substr(stringstart, output.indexOf("\n", stringstart) - stringstart)
-            if output.indexOf("€") > -1
-              output = output.substr(0, output.indexOf(" - "), output.length - 10)
-            robot.http("http://www.studentenwerk-dresden.de/mensen/speiseplan/")
-              .get() (err, res, body) ->
-                if body.trim() == ""
-                  msg.send ("No image found, sorry.")
-                else
-                  body = body.substr(body.indexOf("<th class=\"text\">Alte Mensa</th>"))
-                  if body.indexOf(output) > -1
-                    body = body.substr(0, body.indexOf(output) + output.length + 4)
-                    body = body.substr(body.lastIndexOf("<a href") + 9)
-                    body = body.substr(0, body.indexOf("\">"))
-                    link = "http://www.studentenwerk-dresden.de/mensen/speiseplan/" + body
-                    robot.http(link)
-                      .get() (err, res, body) ->
-                        if body.trim() == ""
-                          msg.send ("No image found, sorry.")
-                        else
-                          imagelink = body.substr(body.indexOf("//bilderspeiseplan"))
-                          imagelink = imagelink.substr(0, imagelink.indexOf("\""))
-                          imagelink = "http:" + imagelink
-                          if imagelink.length < 20
-                            msg.send ("No image found, sorry.")
-                          else
-                            msg.send(imagelink)
-                  else
-                    msg.send ("No image found, sorry.")
-          else
-            msg.send("No food with this number..");
+  -- getImage = (msg, imgid) ->
+  --   tzoffset = (new Date()).getTimezoneOffset() * 60000
+  --   now = (new Date(Date.now() - tzoffset)).toISOString().slice(0,10)
+  --   robot.http("http://openmensa.org/api/v2/canteens/79/days/#{now}/meals")
+  --     .get() (err, res, body) ->
+  --       if body.trim() == ""
+  --         msg.send "This mensa is currently out of order, sorry."
+  --       else
+  --         data = JSON.parse body
+  --         output = "#{data.map(formatOutput).join('\n')}\n"
+  --         stringstart = output.indexOf("#{imgid}: ")
+  --         if stringstart > -1
+  --           if imgid > 9
+  --             stringstart += 5
+  --           else
+  --             stringstart += 4
+  --           output = output.substr(stringstart, output.indexOf("\n", stringstart) - stringstart)
+  --           if output.indexOf("€") > -1
+  --             output = output.substr(0, output.indexOf(" - "), output.length - 10)
+  --           robot.http("http://www.studentenwerk-dresden.de/mensen/speiseplan/")
+  --             .get() (err, res, body) ->
+  --               if body.trim() == ""
+  --                 msg.send ("No image found, sorry.")
+  --               else
+  --                 body = body.substr(body.indexOf("<th class=\"text\">Alte Mensa</th>"))
+  --                 if body.indexOf(output) > -1
+  --                   body = body.substr(0, body.indexOf(output) + output.length + 4)
+  --                   body = body.substr(body.lastIndexOf("<a href") + 9)
+  --                   body = body.substr(0, body.indexOf("\">"))
+  --                   link = "http://www.studentenwerk-dresden.de/mensen/speiseplan/" + body
+  --                   robot.http(link)
+  --                     .get() (err, res, body) ->
+  --                       if body.trim() == ""
+  --                         msg.send ("No image found, sorry.")
+  --                       else
+  --                         imagelink = body.substr(body.indexOf("//bilderspeiseplan"))
+  --                         imagelink = imagelink.substr(0, imagelink.indexOf("\""))
+  --                         imagelink = "http:" + imagelink
+  --                         if imagelink.length < 20
+  --                           msg.send ("No image found, sorry.")
+  --                         else
+  --                           msg.send(imagelink)
+  --                 else
+  --                   msg.send ("No image found, sorry.")
+  --         else
+  --           msg.send("No food with this number..");
 
 
     getMeals name mensa callback =
@@ -137,7 +137,7 @@ script = defineScript "mensa" $ do
 
     respond (r [CaseInsensitive] "mensen") $ do
         let names = catMaybes $ map (headMay . fst) mensen
-        send $ "Ich kann dir heutige Speisepläne für die folgenden Mensen holen:\n - " ++ intercalate ", " names ++ "\nSprich' mich einfach mit `matthias mensa <mensa>` an."
+        send $(isL "Ich kann dir heutige Speisepläne für die folgenden Mensen holen:\n - #{intercalate ", " names}\nSprich' mich einfach mit `matthias mensa <mensa>` an.")
 
 generic_resp_func mensa send = do
     let mensaKey = toLower mensa
@@ -148,7 +148,7 @@ generic_resp_func mensa send = do
 formatOutput = (meal, index) ->
   "#{index}: " +
     (if meal.category == "Pasta"
-      "Pasta mit #{meal.name} #{formatMealNotes(meal.notes)}"
+      $(isL "Pasta mit #{meal.name} #{formatMealNotes(meal.notes)}")
     else if meal.prices.students?
       "#{meal.name} - #{meal.prices.students.toFixed(2)}€ #{formatMealNotes(meal.notes)}#{formatMealCategory(meal.category)}"
     else
